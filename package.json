@@ -15,7 +15,9 @@
     "dist": "npm run build && electron-builder",
     "dist-win": "npm run build && electron-builder --win",
     "dist-mac": "npm run build && electron-builder --mac",
-    "dist-linux": "npm run build && electron-builder --linux"
+    "dist-linux": "npm run build && electron-builder --linux",
+    "build-client-package": "node build-client-package.js",
+    "package-for-client": "npm run build-client-package"
   },
   "dependencies": {
     "@supabase/realtime-js": "^2.15.5",
