@@ -32,7 +32,18 @@ type AuthAction =
 
 const initialState: AuthState = {
   currentUser: null,
-  users: [],
+  users: [
+    {
+      id: 'admin-othman-bouagada',
+      username: 'Othman Bouagada',
+      email: 'bouagada@brixelacademy.com',
+      fullName: 'Othman Bouagada',
+      role: 'super_admin',
+      isActive: true,
+      subscriptionType: 'enterprise',
+      createdAt: new Date().toISOString(),
+    }
+  ],
   isAuthenticated: false,
   isLoading: false,
 };
@@ -210,7 +221,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       // Demo mode - allow login with any credentials
       console.warn('⚠️ Supabase not configured. Running in demo mode.');
       
-      // Create a demo user for testing
+      // Check if this is the admin user
+      if (email === 'bouagada@brixelacademy.com' && password === 'Mostaganem@27') {
+        const adminUser: User = {
+          id: 'admin-othman-bouagada',
+          username: 'Othman Bouagada',
+          email: 'bouagada@brixelacademy.com',
+          fullName: 'Othman Bouagada',
+          role: 'super_admin',
+          isActive: true,
+          subscriptionType: 'enterprise',
+          createdAt: new Date().toISOString(),
+        };
+        dispatch({ type: 'LOGIN_SUCCESS', payload: adminUser });
+        dispatch({ type: 'SET_LOADING', payload: false });
+        return true;
+      }
+      
+      // Create a demo user for other credentials
       const demoUser: User = {
         id: 'demo-user-' + Date.now(),
         username: email.split('@')[0] || 'demo',
