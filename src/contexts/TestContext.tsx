@@ -104,10 +104,15 @@ function testReducer(state: TestState, action: TestAction): TestState {
       };
 
     case 'SET_SECTION':
+      const newSectionQuestions = state.questions.filter(q => 
+        q.section === action.payload && q.examSet === state.currentExamSet
+      );
       return {
         ...state,
         currentSection: action.payload,
-        currentQuestionIndex: 0,
+        currentQuestionIndex: action.payload === 'listening' ? 0 : 
+                            action.payload === 'grammar' ? 0 : 
+                            action.payload === 'reading' ? 0 : state.currentQuestionIndex,
       };
 
     case 'NEXT_QUESTION':
@@ -134,7 +139,12 @@ function testReducer(state: TestState, action: TestAction): TestState {
     case 'TICK_TIMER':
       const newTime = Math.max(0, state.timeRemaining - 1);
       if (newTime === 0) {
-        return { ...state, timeRemaining: newTime, testCompleted: true };
+        return { 
+          ...state, 
+          timeRemaining: newTime, 
+          testCompleted: true,
+          currentSection: 'results'
+        };
       }
       return { ...state, timeRemaining: newTime };
 

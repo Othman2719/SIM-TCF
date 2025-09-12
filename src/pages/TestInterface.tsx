@@ -23,11 +23,14 @@ const TestInterface: React.FC = () => {
       return;
     }
 
-    const timer = setInterval(() => {
-      dispatch({ type: 'TICK_TIMER' });
-    }, 1000);
+    // Only start timer if test is active and not completed
+    if (state.testStarted && !state.testCompleted && state.timeRemaining > 0) {
+      const timer = setInterval(() => {
+        dispatch({ type: 'TICK_TIMER' });
+      }, 1000);
 
-    return () => clearInterval(timer);
+      return () => clearInterval(timer);
+    }
   }, [state.testStarted, state.testCompleted, dispatch, navigate]);
 
   const handleEmergencyStop = () => {
@@ -85,14 +88,25 @@ const TestInterface: React.FC = () => {
   const currentQuestion = sectionQuestions[state.currentQuestionIndex];
 
   if (!currentQuestion) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-lg text-gray-600">Chargement du test...</p>
+    // If no current question but test is started, try to navigate to results
+    if (state.testStarted && !state.testCompleted) {
+      dispatch({ type: 'COMPLETE_TEST' });
+      return null;
+    }
+    
+    // Show loading only if test hasn't started yet
+    if (!state.testStarted) {
+      return (
+        <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600 mx-auto mb-4"></div>
+            <p className="text-lg text-gray-600">Chargement du test...</p>
+          </div>
         </div>
-      </div>
-    );
+      );
+    }
+    
+    return null;
   }
 
   return (
