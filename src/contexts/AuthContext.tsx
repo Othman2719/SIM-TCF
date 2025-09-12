@@ -261,7 +261,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const createUser = async (userData: { email: string; password: string; username: string; role?: 'admin' | 'client' }) => {
     if (!isSupabaseConfigured()) {
-      throw new Error('Cannot create user: Supabase not configured');
+      console.warn('⚠️ Supabase not configured. Creating demo user locally.');
+      
+      // Create demo user locally
+      const newUser: User = {
+        id: 'demo-user-' + Date.now(),
+        username: userData.username,
+        email: userData.email,
+        role: userData.role || 'client',
+        isActive: true,
+        createdAt: new Date().toISOString(),
+      };
+      
+      dispatch({ type: 'ADD_USER', payload: newUser });
+      return true;
     }
 
     try {
