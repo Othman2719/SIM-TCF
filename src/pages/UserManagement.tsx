@@ -36,6 +36,7 @@ const UserManagement: React.FC = () => {
     createUser(formData);
     resetForm();
     setShowAddForm(false);
+    alert(`Utilisateur "${formData.username}" créé avec succès ! Il peut maintenant se connecter avec ces identifiants.`);
   };
 
   const handleEditUser = (user: User) => {
@@ -66,6 +67,7 @@ const UserManagement: React.FC = () => {
     resetForm();
     setShowAddForm(false);
     setEditingUser(null);
+    alert('Utilisateur mis à jour avec succès !');
   };
 
   const handleDeleteUser = (userId: string) => {

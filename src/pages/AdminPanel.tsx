@@ -52,6 +52,7 @@ const AdminPanel: React.FC = () => {
     dispatch({ type: 'SET_QUESTIONS', payload: [...state.questions, newQuestion] });
     resetForm();
     setShowAddForm(false);
+    alert('Question ajoutée avec succès ! Elle est maintenant disponible pour tous les utilisateurs.');
   };
 
   const handleEditQuestion = (question: Question) => {
@@ -86,12 +87,14 @@ const AdminPanel: React.FC = () => {
     resetForm();
     setShowAddForm(false);
     setEditingQuestion(null);
+    alert('Question mise à jour avec succès !');
   };
 
   const handleDeleteQuestion = (questionId: string) => {
     if (confirm('Êtes-vous sûr de vouloir supprimer cette question ?')) {
       const updatedQuestions = state.questions.filter(q => q.id !== questionId);
       dispatch({ type: 'SET_QUESTIONS', payload: updatedQuestions });
+      alert('Question supprimée avec succès !');
     }
   };
 
@@ -112,6 +115,7 @@ const AdminPanel: React.FC = () => {
     dispatch({ type: 'SET_EXAM_SETS', payload: [...state.examSets, newExamSet] });
     resetExamForm();
     setShowExamForm(false);
+    alert('Nouvel examen créé avec succès !');
   };
 
   const handleUpdateExamSet = () => {

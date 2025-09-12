@@ -5,17 +5,11 @@ import TimerComponent from '../components/TimerComponent';
 import QuestionComponent from '../components/QuestionComponent';
 import NavigationComponent from '../components/NavigationComponent';
 import ProgressBar from '../components/ProgressBar';
-import { mockQuestions } from '../data/mockQuestions';
 import { Clock, Volume2, PenTool, FileText, AlertTriangle } from 'lucide-react';
 
 const TestInterface: React.FC = () => {
   const { state, dispatch } = useTest();
   const navigate = useNavigate();
-
-  useEffect(() => {
-    // Load mock questions
-    dispatch({ type: 'SET_QUESTIONS', payload: mockQuestions });
-  }, [dispatch]);
 
   useEffect(() => {
     if (!state.testStarted) {
