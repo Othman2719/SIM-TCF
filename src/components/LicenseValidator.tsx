@@ -24,11 +24,11 @@ const LicenseValidator: React.FC = () => {
         const licenseInfo = await window.electronAPI.validateLicense();
         setLicense(licenseInfo);
       } else {
-        // Web version - demo mode
+        // Web version - commercial mode
         setLicense({
           valid: true,
-          type: 'demo',
-          features: ['basic-tests', 'limited-users'],
+          type: 'commercial',
+          features: ['multi-user', 'real-time', 'certificates', 'analytics'],
           expiresAt: null
         });
       }
@@ -36,7 +36,7 @@ const LicenseValidator: React.FC = () => {
       console.error('License validation error:', error);
       setLicense({
         valid: false,
-        type: 'demo',
+        type: 'commercial',
         features: [],
         expiresAt: null
       });
@@ -78,7 +78,7 @@ const LicenseValidator: React.FC = () => {
     if (!license.valid) return 'Licence invalide';
     if (license.type === 'commercial') return 'Licence Commerciale Activée';
     if (license.type === 'enterprise') return 'Licence Enterprise Activée';
-    return 'Mode Démonstration';
+    return 'Version Web Commerciale';
   };
 
   return (
@@ -95,15 +95,17 @@ const LicenseValidator: React.FC = () => {
       
       {license.type === 'commercial' && (
         <div className="mt-2 text-xs text-gray-600">
-          <div>✓ Multi-utilisateurs illimités</div>
+          <div>✓ Version Web Commerciale</div>
+          <div>✓ Multi-utilisateurs temps réel</div>
           <div>✓ Support technique premium</div>
-          <div>✓ Mises à jour gratuites</div>
         </div>
       )}
       
-      {license.type === 'demo' && (
+      {license.type === 'enterprise' && (
         <div className="mt-2 text-xs text-gray-600">
-          Mode démonstration - Fonctionnalités limitées
+          <div>✓ Version Enterprise</div>
+          <div>✓ Fonctionnalités avancées</div>
+          <div>✓ Support prioritaire</div>
         </div>
       )}
       
