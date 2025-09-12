@@ -51,13 +51,16 @@ export function useSupabaseAuth() {
         .from('users')
         .select('*')
         .eq('id', userId)
-        .single();
+        .maybeSingle();
 
       if (error) {
         console.error('Error fetching user profile:', error);
         setUser(null);
-      } else {
+      } else if (data) {
         setUser(data);
+      } else {
+        // User profile doesn't exist yet, set user to null
+        setUser(null);
       }
     } catch (error) {
       console.error('Error fetching user profile:', error);
@@ -108,14 +111,19 @@ export function useSupabaseAuth() {
 
         if (profileError) throw profileError;
 
-        // Create default subscription
-        await supabase
+        // Create default subscription - only if user profile was created successfully
+        const { error: subscriptionError } = await supabase
           .from('user_subscriptions')
           .insert({
             user_id: authData.user.id,
             subscription_type: 'free',
             is_active: true,
           });
+
+        // Don't throw error for subscription creation failure, just log it
+        if (subscriptionError) {
+          console.warn('Failed to create default subscription:', subscriptionError);
+        }
       }
 
       return { success: true, data: authData };
