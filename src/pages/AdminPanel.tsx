@@ -521,9 +521,6 @@ const AdminPanel: React.FC = () => {
                       <div className="flex-1">
                         <div className="flex items-center space-x-3 mb-3">
                           <span className="text-sm font-medium text-gray-500">Question {index + 1}</span>
-                          <span className="px-2 py-1 bg-blue-100 text-blue-700 text-xs font-medium rounded-full">
-                            {question.level}
-                          </span>
                         </div>
                         <p className="text-gray-900 mb-4">{question.questionText}</p>
                         <div className="grid grid-cols-2 gap-2 text-sm">

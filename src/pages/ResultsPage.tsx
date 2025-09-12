@@ -217,9 +217,6 @@ const ResultsPage: React.FC = () => {
                       <span className="text-sm font-medium text-gray-500">
                         Question {index + 1}
                       </span>
-                      <span className="px-2 py-1 bg-gray-100 text-gray-600 text-xs font-medium rounded-full">
-                        {question.level}
-                      </span>
                       <span className="px-2 py-1 bg-blue-100 text-blue-600 text-xs font-medium rounded-full">
                         {question.section === 'listening' ? 'Orale' : question.section === 'grammar' ? 'Grammaire' : 'Écrite'}
                       </span>
