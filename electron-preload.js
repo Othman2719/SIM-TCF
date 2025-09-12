@@ -12,6 +12,9 @@ contextBridge.exposeInMainWorld('electronAPI', {
   // App info
   getAppVersion: () => ipcRenderer.invoke('app-version'),
   
+  // License validation
+  validateLicense: () => ipcRenderer.invoke('validate-license'),
+  
   // Menu events
   onMenuNewTest: (callback) => ipcRenderer.on('menu-new-test', callback),
   

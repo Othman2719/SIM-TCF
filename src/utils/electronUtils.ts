@@ -8,6 +8,12 @@ declare global {
       onMenuNewTest: (callback: () => void) => void;
       platform: string;
       removeAllListeners: (channel: string) => void;
+      validateLicense: () => Promise<{
+        valid: boolean;
+        type: 'demo' | 'commercial' | 'enterprise';
+        features: string[];
+        expiresAt: string | null;
+      }>;
     };
   }
 }

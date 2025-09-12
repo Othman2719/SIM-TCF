@@ -9,6 +9,7 @@ import LoginPage from './pages/LoginPage';
 import UserManagement from './pages/UserManagement';
 import { TestProvider } from './contexts/TestContext';
 import ProtectedRoute from './components/ProtectedRoute';
+import LicenseValidator from './components/LicenseValidator';
 import './App.css';
 
 function App() {
@@ -46,6 +47,7 @@ function App() {
               } />
               <Route path="*" element={<Navigate to="/" replace />} />
             </Routes>
+            <LicenseValidator />
           </div>
         </Router>
       </TestProvider>
