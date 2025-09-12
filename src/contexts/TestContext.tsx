@@ -9,7 +9,6 @@ export interface Question {
   options: string[];
   correctAnswer: number;
   audioUrl?: string;
-  imageUrl?: string;
   level: 'A1' | 'A2' | 'B1' | 'B2' | 'C1' | 'C2';
 }
 
@@ -104,15 +103,10 @@ function testReducer(state: TestState, action: TestAction): TestState {
       };
 
     case 'SET_SECTION':
-      const newSectionQuestions = state.questions.filter(q => 
-        q.section === action.payload && q.examSet === state.currentExamSet
-      );
       return {
         ...state,
         currentSection: action.payload,
-        currentQuestionIndex: action.payload === 'listening' ? 0 : 
-                            action.payload === 'grammar' ? 0 : 
-                            action.payload === 'reading' ? 0 : state.currentQuestionIndex,
+        currentQuestionIndex: 0,
       };
 
     case 'NEXT_QUESTION':
@@ -139,12 +133,7 @@ function testReducer(state: TestState, action: TestAction): TestState {
     case 'TICK_TIMER':
       const newTime = Math.max(0, state.timeRemaining - 1);
       if (newTime === 0) {
-        return { 
-          ...state, 
-          timeRemaining: newTime, 
-          testCompleted: true,
-          currentSection: 'results'
-        };
+        return { ...state, timeRemaining: newTime, testCompleted: true };
       }
       return { ...state, timeRemaining: newTime };
 

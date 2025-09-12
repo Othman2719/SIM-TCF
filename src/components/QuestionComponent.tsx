@@ -84,16 +84,6 @@ const QuestionComponent: React.FC<QuestionComponentProps> = ({ question }) => {
 
       {/* Question Text */}
       <div className="bg-gray-50 border border-gray-200 rounded-lg p-6">
-        {/* Question Image */}
-        {question.imageUrl && (
-          <div className="mb-4">
-            <img 
-              src={question.imageUrl} 
-              alt="Question illustration" 
-              className="max-w-full h-auto max-h-64 object-contain mx-auto border border-gray-200 rounded"
-            />
-          </div>
-        )}
         <h3 className="text-lg font-medium text-gray-900 leading-relaxed">
           {question.questionText}
         </h3>
