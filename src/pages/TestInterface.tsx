@@ -127,9 +127,6 @@ const TestInterface: React.FC = () => {
               <h2 className="text-xl font-semibold text-gray-900">
                 Question {state.currentQuestionIndex + 1} sur {sectionQuestions.length}
               </h2>
-              <span className="px-3 py-1 bg-blue-100 text-blue-700 text-sm font-medium rounded-full">
-                Niveau {currentQuestion.level}
-              </span>
             </div>
 
             <QuestionComponent question={currentQuestion} />
