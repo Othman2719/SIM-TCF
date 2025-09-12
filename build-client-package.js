@@ -158,7 +158,8 @@ reading,Lisez le texte et répondez,Option 1,Option 2,Option 3,Option 4,3,B1`;
 
 // Créer le script d'installation
 const createInstallScript = () => {
-  console.log('🔧 Création du script d'installation...');
+  console.log('🔧 Création du script d\'installation...');
+  )
   
   const installScript = `#!/bin/bash
 # Script d'installation automatique TCF Simulator Pro
