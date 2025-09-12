@@ -18,17 +18,33 @@ if (!supabaseUrl || !supabaseAnonKey) {
   console.error('3. Get credentials from: https://supabase.com → Your Project → Settings → API');
   console.error('4. Restart the development server');
   console.error('');
+  
+  // Show setup instructions
+  console.error('📋 QUICK SETUP GUIDE:');
+  console.error('1. Go to https://supabase.com and create a new project');
+  console.error('2. Wait for the project to be ready (2-3 minutes)');
+  console.error('3. Go to Settings → API in your Supabase dashboard');
+  console.error('4. Copy your Project URL and anon/public key');
+  console.error('5. Create a .env file in your project root with:');
+  console.error('   VITE_SUPABASE_URL=your_project_url');
+  console.error('   VITE_SUPABASE_ANON_KEY=your_anon_key');
+  console.error('6. Restart the development server');
 }
 
 // Check if values are still placeholders
-if (supabaseUrl?.includes('your-project-id') || supabaseAnonKey?.includes('your-anon-key')) {
-  console.warn('⚠️ Supabase using placeholder values - running in demo mode');
+if (supabaseUrl?.includes('your-project') || supabaseAnonKey?.includes('your-anon-key') || supabaseAnonKey?.includes('placeholder')) {
+  console.warn('⚠️ Supabase using placeholder values');
+  console.warn('📋 To enable real-time multi-user functionality:');
+  console.warn('1. Create a Supabase project at https://supabase.com');
+  console.warn('2. Update your .env file with real credentials');
+  console.warn('3. The database schema is already configured');
 }
 
 // Only log success if properly configured
 if (supabaseUrl && supabaseAnonKey && 
-    !supabaseUrl.includes('your-project-id') && 
-    !supabaseAnonKey.includes('your-anon-key')) {
+    !supabaseUrl.includes('your-project') && 
+    !supabaseAnonKey.includes('your-anon-key') &&
+    !supabaseAnonKey.includes('placeholder')) {
   console.log('✅ Supabase configured successfully:', {
     url: supabaseUrl,
     keyLength: supabaseAnonKey.length
@@ -61,8 +77,9 @@ export const supabase = createClient(
 export const isSupabaseConfigured = () => {
   return !!(supabaseUrl && 
            supabaseAnonKey && 
-           !supabaseUrl.includes('your-project-id') && 
-           !supabaseAnonKey.includes('your-anon-key'));
+           !supabaseUrl.includes('your-project') && 
+           !supabaseAnonKey.includes('your-anon-key') &&
+           !supabaseAnonKey.includes('placeholder'));
 };
 
 // Database types

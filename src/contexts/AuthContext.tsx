@@ -289,20 +289,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const createUser = async (userData: { email: string; password: string; username: string; role?: 'admin' | 'client' }) => {
     if (!isSupabaseConfigured()) {
-      console.warn('⚠️ Supabase not configured. Creating demo user locally.');
-      
-      // Create demo user locally
-      const newUser: User = {
-        id: 'demo-user-' + Date.now(),
-        username: userData.username,
-        email: userData.email,
-        role: userData.role || 'client',
-        isActive: true,
-        createdAt: new Date().toISOString(),
-      };
-      
-      dispatch({ type: 'ADD_USER', payload: newUser });
-      return true;
+      throw new Error('🚨 DATABASE REQUIRED\n\nTo create users that persist across sessions, you need to:\n\n1. Set up Supabase database\n2. Configure your .env file\n3. Restart the server\n\nSee console for setup instructions.');
     }
 
     try {
@@ -329,6 +316,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         if (profileError) throw profileError;
 
         await loadUsers();
+        console.log('✅ User created in database:', userData.username);
+        console.log('🔄 User can now login from any device');
         return true;
       }
     } catch (error) {

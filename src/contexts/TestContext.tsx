@@ -453,25 +453,7 @@ export function TestProvider({ children }: { children: ReactNode }) {
   // Create new exam set
   const createExamSet = async (examSetData: Omit<ExamSet, 'id' | 'createdAt' | 'updatedAt'>) => {
     if (!isSupabaseConfigured()) {
-      console.warn('⚠️ Supabase not configured. Creating exam set locally.');
-      
-      // Create exam set locally
-      const newExamSet: ExamSet = {
-        id: Math.max(...state.examSets.map(e => e.id), 0) + 1,
-        name: examSetData.name,
-        description: examSetData.description,
-        totalQuestions: 0,
-        isActive: examSetData.isActive,
-        isPremium: examSetData.isPremium || false,
-        difficultyLevel: examSetData.difficultyLevel || 'mixed',
-        timeLimitMinutes: examSetData.timeLimitMinutes || 90,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-      };
-      
-      dispatch({ type: 'SET_EXAM_SETS', payload: [...state.examSets, newExamSet] });
-      console.log('Exam set created locally:', newExamSet);
-      return;
+      throw new Error('🚨 DATABASE REQUIRED\n\nTo create exams that all users can access, you need to:\n\n1. Set up Supabase database\n2. Configure your .env file\n3. Restart the server\n\nSee console for setup instructions.');
     }
 
     try {
@@ -495,6 +477,7 @@ export function TestProvider({ children }: { children: ReactNode }) {
       
       // Real-time will automatically update all clients
       console.log('Exam set created:', data);
+      console.log('🔄 All users will see this exam immediately');
     } catch (error) {
       console.error('Error creating exam set:', error);
       throw error;
@@ -504,26 +487,7 @@ export function TestProvider({ children }: { children: ReactNode }) {
   // Create new question
   const createQuestion = async (questionData: Omit<Question, 'id' | 'createdAt' | 'updatedAt'>) => {
     if (!isSupabaseConfigured()) {
-      console.warn('⚠️ Supabase not configured. Creating question locally.');
-      
-      // Create question locally
-      const newQuestion: Question = {
-        id: 'local_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9),
-        section: questionData.section,
-        examSet: questionData.examSet,
-        questionText: questionData.questionText,
-        options: questionData.options,
-        correctAnswer: questionData.correctAnswer,
-        level: questionData.level,
-        audioUrl: questionData.audioUrl,
-        imageUrl: questionData.imageUrl,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-      };
-      
-      dispatch({ type: 'SET_QUESTIONS', payload: [...state.questions, newQuestion] });
-      console.log('Question created locally:', newQuestion);
-      return;
+      throw new Error('🚨 DATABASE REQUIRED\n\nTo create questions that all users can access, you need to:\n\n1. Set up Supabase database\n2. Configure your .env file\n3. Restart the server\n\nSee console for setup instructions.');
     }
 
     try {
@@ -547,7 +511,8 @@ export function TestProvider({ children }: { children: ReactNode }) {
 
       if (error) throw error;
       
-      console.log('Question created:', data);
+      console.log('✅ Question created in database:', data);
+      console.log('🔄 All users will see this question immediately');
     } catch (error) {
       console.error('Error creating question:', error);
       throw error;
@@ -557,22 +522,7 @@ export function TestProvider({ children }: { children: ReactNode }) {
   // Update exam set
   const updateExamSet = async (id: number, updates: Partial<ExamSet>) => {
     if (!isSupabaseConfigured()) {
-      console.warn('⚠️ Supabase not configured. Updating exam set locally.');
-      
-      // Update exam set locally
-      const updatedExamSets = state.examSets.map(examSet => 
-        examSet.id === id 
-          ? { 
-              ...examSet, 
-              ...updates,
-              updatedAt: new Date().toISOString()
-            }
-          : examSet
-      );
-      
-      dispatch({ type: 'SET_EXAM_SETS', payload: updatedExamSets });
-      console.log('Exam set updated locally:', id);
-      return;
+      throw new Error('🚨 DATABASE REQUIRED\n\nTo update exams for all users, you need to:\n\n1. Set up Supabase database\n2. Configure your .env file\n3. Restart the server\n\nSee console for setup instructions.');
     }
 
     try {
@@ -592,7 +542,8 @@ export function TestProvider({ children }: { children: ReactNode }) {
 
       if (error) throw error;
       
-      console.log('Exam set updated:', data);
+      console.log('✅ Exam set updated in database:', data);
+      console.log('🔄 All users will see the changes immediately');
     } catch (error) {
       console.error('Error updating exam set:', error);
       throw error;
@@ -602,22 +553,7 @@ export function TestProvider({ children }: { children: ReactNode }) {
   // Update question
   const updateQuestion = async (id: string, updates: Partial<Question>) => {
     if (!isSupabaseConfigured()) {
-      console.warn('⚠️ Supabase not configured. Updating question locally.');
-      
-      // Update question locally
-      const updatedQuestions = state.questions.map(question => 
-        question.id === id 
-          ? { 
-              ...question, 
-              ...updates,
-              updatedAt: new Date().toISOString()
-            }
-          : question
-      );
-      
-      dispatch({ type: 'SET_QUESTIONS', payload: updatedQuestions });
-      console.log('Question updated locally:', id);
-      return;
+      throw new Error('🚨 DATABASE REQUIRED\n\nTo update questions for all users, you need to:\n\n1. Set up Supabase database\n2. Configure your .env file\n3. Restart the server\n\nSee console for setup instructions.');
     }
 
     try {
@@ -639,7 +575,8 @@ export function TestProvider({ children }: { children: ReactNode }) {
 
       if (error) throw error;
       
-      console.log('Question updated:', data);
+      console.log('✅ Question updated in database:', data);
+      console.log('🔄 All users will see the changes immediately');
     } catch (error) {
       console.error('Error updating question:', error);
       throw error;
