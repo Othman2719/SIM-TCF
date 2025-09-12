@@ -14,7 +14,7 @@ const HomePage: React.FC = () => {
   };
 
   const confirmStartTest = () => {
-    const examId = examSetId || selectedExam;
+    const examId = selectedExam;
     dispatch({ type: 'SELECT_EXAM_SET', payload: examId });
     dispatch({ type: 'START_TEST', payload: examId });
     setShowStartModal(false);
