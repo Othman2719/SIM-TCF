@@ -1,18 +1,28 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTest } from '../contexts/TestContext';
-import { BookOpen, Clock, Headphones, PenTool, FileText, Target, ChevronRight, Lock } from 'lucide-react';
+import { BookOpen, Clock, Headphones, PenTool, FileText, Target, ChevronRight, Lock, AlertCircle } from 'lucide-react';
 
 const HomePage: React.FC = () => {
   const navigate = useNavigate();
   const { state, dispatch } = useTest();
   const [selectedExam, setSelectedExam] = React.useState<number>(1);
+  const [showStartModal, setShowStartModal] = React.useState(false);
 
   const handleStartTest = (examSetId?: number) => {
+    setShowStartModal(true);
+  };
+
+  const confirmStartTest = () => {
     const examId = examSetId || selectedExam;
     dispatch({ type: 'SELECT_EXAM_SET', payload: examId });
     dispatch({ type: 'START_TEST', payload: examId });
+    setShowStartModal(false);
     navigate('/test');
+  };
+
+  const cancelStartTest = () => {
+    setShowStartModal(false);
   };
 
   const getExamQuestionCount = (examSetId: number) => {
@@ -266,6 +276,55 @@ const HomePage: React.FC = () => {
 
         {/* Quick Start */}
       </main>
+
+      {/* Start Test Modal */}
+      {showStartModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl p-8 max-w-md w-full mx-4 shadow-2xl">
+            <div className="text-center">
+              {/* Icon */}
+              <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-6">
+                <AlertCircle className="w-8 h-8 text-blue-600" />
+              </div>
+
+              {/* Title */}
+              <h3 className="text-xl font-bold text-gray-900 mb-6">ATTENTION !</h3>
+
+              {/* Content */}
+              <div className="space-y-4 mb-8 text-gray-700">
+                <p className="leading-relaxed">
+                  Vous êtes sur le point de lancer le simulateur TCF. Vous avez 90 
+                  minutes pour réaliser le test, vous ne pourrez pas faire de pause.
+                </p>
+                <p className="leading-relaxed">
+                  Utilisez des écouteurs ou un casque audio pour une meilleure 
+                  expérience.
+                </p>
+                <p className="font-semibold text-gray-900 mt-6">
+                  Êtes-vous prêt ?
+                </p>
+              </div>
+
+              {/* Buttons */}
+              <div className="space-y-3">
+                <button
+                  onClick={confirmStartTest}
+                  className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-6 rounded-lg transition-colors flex items-center justify-center space-x-2"
+                >
+                  <span>Commencer le test</span>
+                  <ChevronRight className="w-4 h-4" />
+                </button>
+                <button
+                  onClick={cancelStartTest}
+                  className="w-full bg-white hover:bg-gray-50 text-gray-600 font-medium py-3 px-6 rounded-lg border border-gray-300 transition-colors"
+                >
+                  Revenir à l'accueil
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
