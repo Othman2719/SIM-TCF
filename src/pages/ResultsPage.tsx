@@ -1,10 +1,13 @@
 import React from 'react';
 import { useTest } from '../contexts/TestContext';
+import { useAuth } from '../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
-import { Award, CheckCircle, XCircle, RotateCcw, Home } from 'lucide-react';
+import { Award, CheckCircle, XCircle, RotateCcw, Home, Download, Printer } from 'lucide-react';
+import { downloadCertificatePDF, printCertificatePDF, CertificateData } from '../utils/pdfGenerator';
 
 const ResultsPage: React.FC = () => {
   const { state, dispatch } = useTest();
+  const { state: authState } = useAuth();
   const navigate = useNavigate();
 
   const handleReturnHome = () => {
@@ -18,17 +21,20 @@ const ResultsPage: React.FC = () => {
   };
 
   const getCorrectAnswers = () => {
-    return state.questions.filter(q => state.answers[q.id] === q.correctAnswer).length;
+    const currentExamQuestions = state.questions.filter(q => q.examSet === state.currentExamSet);
+    return currentExamQuestions.filter(q => state.answers[q.id] === q.correctAnswer).length;
   };
 
   const getIncorrectAnswers = () => {
-    return state.questions.filter(q => 
+    const currentExamQuestions = state.questions.filter(q => q.examSet === state.currentExamSet);
+    return currentExamQuestions.filter(q => 
       state.answers[q.id] !== undefined && state.answers[q.id] !== q.correctAnswer
     ).length;
   };
 
   const getUnansweredQuestions = () => {
-    return state.questions.filter(q => state.answers[q.id] === undefined).length;
+    const currentExamQuestions = state.questions.filter(q => q.examSet === state.currentExamSet);
+    return currentExamQuestions.filter(q => state.answers[q.id] === undefined).length;
   };
 
   const getSectionResults = (section: 'listening' | 'grammar' | 'reading') => {
@@ -55,6 +61,32 @@ const ResultsPage: React.FC = () => {
     return descriptions[level] || '';
   };
 
+  const generateCertificateNumber = () => {
+    const date = new Date().toISOString().slice(0, 10).replace(/-/g, '');
+    const random = Math.floor(Math.random() * 9999).toString().padStart(4, '0');
+    return `BRIXEL-${date}-${random}`;
+  };
+
+  const handleDownloadPDF = () => {
+    alert('Fonctionnalité de téléchargement PDF en cours de développement');
+  };
+
+  const handlePrintCertificate = () => {
+    const certificateData: CertificateData = {
+      userName: authState.currentUser?.username || 'UTILISATEUR',
+      userEmail: authState.currentUser?.email || 'test@example.com',
+      score: state.score,
+      level: state.level,
+      listeningScore: Math.round((listeningResults.percentage / 100) * (state.score / 3)),
+      grammarScore: Math.round((grammarResults.percentage / 100) * (state.score / 3)),
+      readingScore: Math.round((readingResults.percentage / 100) * (state.score / 3)),
+      certificateNumber,
+      date: currentDate
+    };
+    
+    printCertificatePDF(certificateData);
+  };
+
   const correctAnswers = getCorrectAnswers();
   const incorrectAnswers = getIncorrectAnswers();
   const unanswered = getUnansweredQuestions();
@@ -65,17 +97,22 @@ const ResultsPage: React.FC = () => {
   const grammarResults = getSectionResults('grammar');
   const readingResults = getSectionResults('reading');
 
-  const currentExamSet = state.examSets.find(e => e.id === state.currentExamSet);
+  const certificateNumber = generateCertificateNumber();
+  const currentDate = new Date().toLocaleDateString('fr-FR', {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric'
+  });
+
+  const globalPercentage = totalQuestions > 0 ? Math.round((correctAnswers / totalQuestions) * 100) : 0;
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
+    <div className="min-h-screen bg-gray-100">
       {/* Header */}
-      <header className="bg-white shadow-sm border-b border-blue-100">
+      <header className="bg-white shadow-sm border-b border-gray-200 print:hidden">
         <div className="max-w-6xl mx-auto px-6 py-4">
           <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-2xl font-bold text-gray-900">Résultats du Test TCF</h1>
-              <p className="text-sm text-gray-600">{currentExamSet?.name} - {currentExamSet?.description}</p>
-            </div>
+            <h1 className="text-xl font-semibold text-gray-900">Résultats du Test TCF</h1>
             <div className="flex space-x-4">
               <button
                 onClick={handleRetakeTest}
@@ -96,20 +133,22 @@ const ResultsPage: React.FC = () => {
         </div>
       </header>
 
-      <main className="max-w-6xl mx-auto px-6 py-8">
-        {/* Overall Score */}
-        <div className="bg-white rounded-xl shadow-lg p-8 mb-8 border border-blue-100">
-          <div className="text-center mb-8">
-            <div className="w-24 h-24 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
-              <Award className="w-12 h-12 text-blue-600" />
+      <main className="max-w-4xl mx-auto px-6 py-8">
+        {/* Results Card */}
+        <div className="bg-white rounded-xl shadow-lg p-8 mb-8">
+          {/* Medal Icon */}
+          <div className="text-center mb-6">
+            <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <Award className="w-8 h-8 text-blue-600" />
             </div>
-            <h2 className="text-3xl font-bold text-gray-900 mb-2">Votre Niveau: {state.level}</h2>
-            <p className="text-xl text-blue-600 font-semibold mb-4">{state.score} points sur 699</p>
-            <p className="text-gray-600 max-w-2xl mx-auto">{getLevelDescription(state.level)}</p>
+            <h2 className="text-2xl font-bold text-gray-900 mb-2">Votre Niveau Global: {state.level}</h2>
+            <p className="text-lg text-blue-600 font-semibold">{state.score} points sur 699</p>
+            <p className="text-gray-600 mt-2">{getLevelDescription(state.level)}</p>
           </div>
 
-          <div className="grid md:grid-cols-4 gap-6">
-            <div className="text-center p-4 bg-green-50 rounded-lg border border-green-200">
+          {/* Statistics Grid */}
+          <div className="grid grid-cols-4 gap-4">
+            <div className="text-center p-4 bg-green-50 rounded-lg">
               <div className="flex items-center justify-center mb-2">
                 <CheckCircle className="w-6 h-6 text-green-600" />
               </div>
@@ -117,7 +156,7 @@ const ResultsPage: React.FC = () => {
               <p className="text-sm text-green-600">Bonnes réponses</p>
             </div>
 
-            <div className="text-center p-4 bg-red-50 rounded-lg border border-red-200">
+            <div className="text-center p-4 bg-red-50 rounded-lg">
               <div className="flex items-center justify-center mb-2">
                 <XCircle className="w-6 h-6 text-red-600" />
               </div>
@@ -125,146 +164,167 @@ const ResultsPage: React.FC = () => {
               <p className="text-sm text-red-600">Mauvaises réponses</p>
             </div>
 
-            <div className="text-center p-4 bg-yellow-50 rounded-lg border border-yellow-200">
+            <div className="text-center p-4 bg-yellow-50 rounded-lg">
               <div className="flex items-center justify-center mb-2">
-                <span className="w-6 h-6 bg-yellow-500 rounded-full"></span>
+                <div className="w-6 h-6 bg-yellow-500 rounded-full"></div>
               </div>
               <p className="text-2xl font-bold text-yellow-700">{unanswered}</p>
               <p className="text-sm text-yellow-600">Non répondues</p>
             </div>
 
-            <div className="text-center p-4 bg-blue-50 rounded-lg border border-blue-200">
+            <div className="text-center p-4 bg-blue-50 rounded-lg">
               <div className="flex items-center justify-center mb-2">
-                <span className="w-6 h-6 bg-blue-500 rounded-full"></span>
+                <div className="w-6 h-6 bg-blue-500 rounded-full"></div>
               </div>
-              <p className="text-2xl font-bold text-blue-700">{Math.round((correctAnswers / totalQuestions) * 100)}%</p>
+              <p className="text-2xl font-bold text-blue-700">{globalPercentage}%</p>
               <p className="text-sm text-blue-600">Score global</p>
             </div>
           </div>
         </div>
 
-        {/* Section Results */}
-        <div className="grid md:grid-cols-3 gap-6 mb-8">
-          <div className="bg-white rounded-xl shadow-md p-6 border border-gray-200">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">Compréhension Orale</h3>
-            <div className="mb-4">
-              <div className="flex justify-between text-sm text-gray-600 mb-2">
-                <span>Score</span>
-                <span>{listeningResults.correct}/{listeningResults.total}</span>
+        {/* Certificate Actions */}
+        <div className="bg-white rounded-xl shadow-lg p-6 mb-8">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-3">
+              <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
+                <Award className="w-6 h-6 text-green-600" />
               </div>
-              <div className="w-full bg-gray-200 rounded-full h-2">
-                <div
-                  className="bg-blue-600 h-2 rounded-full"
-                  style={{ width: `${listeningResults.percentage}%` }}
-                ></div>
+              <div>
+                <h3 className="text-xl font-semibold text-gray-900">Certificat Brixel Academy</h3>
+                <p className="text-sm text-gray-600">Téléchargez ou imprimez votre certificat de niveau TCF</p>
               </div>
             </div>
-            <p className="text-2xl font-bold text-blue-600">{Math.round(listeningResults.percentage)}%</p>
-            <p className="text-sm text-gray-600">25 questions • 25 minutes</p>
-          </div>
-
-          <div className="bg-white rounded-xl shadow-md p-6 border border-gray-200">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">Structures de la Langue</h3>
-            <div className="mb-4">
-              <div className="flex justify-between text-sm text-gray-600 mb-2">
-                <span>Score</span>
-                <span>{grammarResults.correct}/{grammarResults.total}</span>
-              </div>
-              <div className="w-full bg-gray-200 rounded-full h-2">
-                <div
-                  className="bg-green-600 h-2 rounded-full"
-                  style={{ width: `${grammarResults.percentage}%` }}
-                ></div>
-              </div>
+            <div className="flex space-x-3">
+              <button
+                onClick={handleDownloadPDF}
+                className="flex items-center space-x-2 bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors"
+              >
+                <Download className="w-4 h-4" />
+                <span>Télécharger PDF</span>
+              </button>
+              <button
+                onClick={handlePrintCertificate}
+                className="flex items-center space-x-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
+              >
+                <Printer className="w-4 h-4" />
+                <span>Imprimer</span>
+              </button>
             </div>
-            <p className="text-2xl font-bold text-green-600">{Math.round(grammarResults.percentage)}%</p>
-            <p className="text-sm text-gray-600">20 questions • 20 minutes</p>
-          </div>
-
-          <div className="bg-white rounded-xl shadow-md p-6 border border-gray-200">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">Compréhension Écrite</h3>
-            <div className="mb-4">
-              <div className="flex justify-between text-sm text-gray-600 mb-2">
-                <span>Score</span>
-                <span>{readingResults.correct}/{readingResults.total}</span>
-              </div>
-              <div className="w-full bg-gray-200 rounded-full h-2">
-                <div
-                  className="bg-purple-600 h-2 rounded-full"
-                  style={{ width: `${readingResults.percentage}%` }}
-                ></div>
-              </div>
-            </div>
-            <p className="text-2xl font-bold text-purple-600">{Math.round(readingResults.percentage)}%</p>
-            <p className="text-sm text-gray-600">25 questions • 45 minutes</p>
           </div>
         </div>
 
-        {/* Detailed Analysis */}
-        <div className="bg-white rounded-xl shadow-md p-8 border border-gray-200">
-          <h3 className="text-xl font-semibold text-gray-900 mb-6">Analyse Détaillée</h3>
-          
-          <div className="space-y-6">
-            {currentExamQuestions.map((question, index) => {
-              const userAnswer = state.answers[question.id];
-              const isCorrect = userAnswer === question.correctAnswer;
-              const isAnswered = userAnswer !== undefined;
+        {/* Question Review Section */}
+        <div className="bg-white rounded-xl shadow-lg">
+          <div className="border-b border-gray-200 p-6">
+            <h3 className="text-xl font-semibold text-gray-900">Révision des Questions</h3>
+            <p className="text-sm text-gray-600 mt-1">Consultez vos réponses pour chaque question de l'examen</p>
+          </div>
 
-              return (
-                <div key={question.id} className="border border-gray-200 rounded-lg p-4">
-                  <div className="flex items-start justify-between mb-3">
-                    <div className="flex items-center space-x-3">
-                      <span className="text-sm font-medium text-gray-500">
-                        Question {index + 1}
-                      </span>
-                      <span className="px-2 py-1 bg-blue-100 text-blue-600 text-xs font-medium rounded-full">
-                        {question.section === 'listening' ? 'Orale' : question.section === 'grammar' ? 'Grammaire' : 'Écrite'}
-                      </span>
-                    </div>
-                    <div className={`flex items-center space-x-1 ${isCorrect ? 'text-green-600' : isAnswered ? 'text-red-600' : 'text-yellow-600'}`}>
-                      {isCorrect ? (
-                        <CheckCircle className="w-4 h-4" />
-                      ) : isAnswered ? (
-                        <XCircle className="w-4 h-4" />
-                      ) : (
-                        <span className="w-4 h-4 bg-yellow-500 rounded-full"></span>
-                      )}
-                      <span className="text-sm font-medium">
-                        {isCorrect ? 'Correct' : isAnswered ? 'Incorrect' : 'Non répondu'}
+          {/* Section Tabs */}
+          <div className="border-b border-gray-200">
+            <nav className="-mb-px flex space-x-8 px-6">
+              {[
+                { key: 'listening', label: 'Compréhension Orale', icon: '🎧' },
+                { key: 'grammar', label: 'Structures de la Langue', icon: '✏️' },
+                { key: 'reading', label: 'Compréhension Écrite', icon: '📖' },
+              ].map((tab) => {
+                const sectionQuestions = currentExamQuestions.filter(q => q.section === tab.key);
+                const sectionCorrect = sectionQuestions.filter(q => state.answers[q.id] === q.correctAnswer).length;
+                
+                return (
+                  <div key={tab.key} className="py-4 px-1 border-b-2 border-transparent">
+                    <div className="flex items-center space-x-2">
+                      <span>{tab.icon}</span>
+                      <span className="font-medium text-gray-700">{tab.label}</span>
+                      <span className="px-2 py-1 text-xs bg-gray-100 text-gray-600 rounded-full">
+                        {sectionCorrect}/{sectionQuestions.length}
                       </span>
                     </div>
                   </div>
+                );
+              })}
+            </nav>
+          </div>
+
+          {/* Questions by Section */}
+          <div className="p-6">
+            {['listening', 'grammar', 'reading'].map((section) => {
+              const sectionQuestions = currentExamQuestions.filter(q => q.section === section);
+              const sectionName = section === 'listening' ? 'Compréhension Orale' : 
+                                section === 'grammar' ? 'Structures de la Langue' : 
+                                'Compréhension Écrite';
+              
+              return (
+                <div key={section} className="mb-8">
+                  <h4 className="text-lg font-semibold text-gray-900 mb-4 flex items-center space-x-2">
+                    <span>{section === 'listening' ? '🎧' : section === 'grammar' ? '✏️' : '📖'}</span>
+                    <span>{sectionName}</span>
+                  </h4>
                   
-                  <p className="text-gray-900 mb-3">{question.questionText}</p>
-                  
-                  <div className="grid grid-cols-1 gap-2">
-                    {question.options.map((option, optIndex) => {
-                      const isUserAnswer = userAnswer === optIndex;
-                      const isCorrectAnswer = question.correctAnswer === optIndex;
-                      
-                      let bgColor = 'bg-gray-100';
-                      let textColor = 'text-gray-700';
-                      
-                      if (isCorrectAnswer) {
-                        bgColor = 'bg-green-100';
-                        textColor = 'text-green-800';
-                      } else if (isUserAnswer && !isCorrect) {
-                        bgColor = 'bg-red-100';
-                        textColor = 'text-red-800';
-                      }
+                  <div className="space-y-4">
+                    {sectionQuestions.map((question, index) => {
+                      const userAnswer = state.answers[question.id];
+                      const isCorrect = userAnswer === question.correctAnswer;
+                      const isAnswered = userAnswer !== undefined;
                       
                       return (
-                        <div
-                          key={optIndex}
-                          className={`p-2 rounded ${bgColor} ${textColor}`}
-                        >
-                          <strong>{String.fromCharCode(65 + optIndex)}:</strong> {option}
-                          {isCorrectAnswer && (
-                            <span className="ml-2 text-xs font-medium">(Bonne réponse)</span>
-                          )}
-                          {isUserAnswer && !isCorrectAnswer && (
-                            <span className="ml-2 text-xs font-medium">(Votre réponse)</span>
-                          )}
+                        <div key={question.id} className={`border-2 rounded-lg p-6 ${
+                          !isAnswered ? 'border-yellow-200 bg-yellow-50' :
+                          isCorrect ? 'border-green-200 bg-green-50' : 'border-red-200 bg-red-50'
+                        }`}>
+                          <div className="flex items-start justify-between mb-4">
+                            <div className="flex items-center space-x-3">
+                              <span className="text-sm font-medium text-gray-500">
+                                Question {index + 1}
+                              </span>
+                              <div className={`px-2 py-1 rounded-full text-xs font-medium ${
+                                !isAnswered ? 'bg-yellow-100 text-yellow-800' :
+                                isCorrect ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                              }`}>
+                                {!isAnswered ? 'Non répondu' : isCorrect ? 'Correct' : 'Incorrect'}
+                              </div>
+                            </div>
+                          </div>
+                          
+                          <p className="text-gray-900 mb-4 font-medium">{question.questionText}</p>
+                          
+                          <div className="grid grid-cols-1 gap-2">
+                            {question.options.map((option, optIndex) => {
+                              const isUserAnswer = userAnswer === optIndex;
+                              const isCorrectAnswer = question.correctAnswer === optIndex;
+                              
+                              return (
+                                <div
+                                  key={optIndex}
+                                  className={`p-3 rounded-lg border ${
+                                    isCorrectAnswer 
+                                      ? 'border-green-300 bg-green-100 text-green-800' 
+                                      : isUserAnswer && !isCorrectAnswer
+                                        ? 'border-red-300 bg-red-100 text-red-800'
+                                        : 'border-gray-200 bg-gray-50 text-gray-700'
+                                  }`}
+                                >
+                                  <div className="flex items-center space-x-3">
+                                    <span className="font-semibold">
+                                      {String.fromCharCode(65 + optIndex)}.
+                                    </span>
+                                    <span>{option}</span>
+                                    <div className="ml-auto flex items-center space-x-2">
+                                      {isCorrectAnswer && (
+                                        <CheckCircle className="w-4 h-4 text-green-600" />
+                                      )}
+                                      {isUserAnswer && !isCorrectAnswer && (
+                                        <XCircle className="w-4 h-4 text-red-600" />
+                                      )}
+                                      {isUserAnswer && (
+                                        <span className="text-xs font-medium">Votre réponse</span>
+                                      )}
+                                    </div>
+                                  </div>
+                                </div>
+                              );
+                            })}
+                          </div>
                         </div>
                       );
                     })}
@@ -276,7 +336,7 @@ const ResultsPage: React.FC = () => {
         </div>
 
         {/* Action Buttons */}
-        <div className="text-center mt-8">
+        <div className="text-center mt-8 print:hidden">
           <div className="flex justify-center space-x-4">
             <button
               onClick={handleRetakeTest}

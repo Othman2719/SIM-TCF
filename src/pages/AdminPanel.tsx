@@ -1,12 +1,14 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTest } from '../contexts/TestContext';
+import { useAuth } from '../contexts/AuthContext';
 import { Plus, Edit2, Trash2, Upload, Home, Save, FolderPlus, Folder } from 'lucide-react';
 import { Question, ExamSet } from '../contexts/TestContext';
 
 const AdminPanel: React.FC = () => {
   const navigate = useNavigate();
   const { state, dispatch } = useTest();
+  const { logout } = useAuth();
   const [activeTab, setActiveTab] = useState<'listening' | 'grammar' | 'reading'>('listening');
   const [selectedExamSet, setSelectedExamSet] = useState<number>(1);
   const [showAddForm, setShowAddForm] = useState(false);
@@ -17,8 +19,8 @@ const AdminPanel: React.FC = () => {
     questionText: '',
     options: ['', '', '', ''],
     correctAnswer: 0,
-    level: 'A1' as Question['level'],
     audioFile: null as File | null,
+    imageFile: null as File | null,
   });
   const [examFormData, setExamFormData] = useState({
     name: '',
@@ -43,13 +45,15 @@ const AdminPanel: React.FC = () => {
       questionText: formData.questionText,
       options: formData.options,
       correctAnswer: formData.correctAnswer,
-      level: formData.level,
+      level: 'A1' as Question['level'], // Default level
       audioUrl: formData.audioFile ? URL.createObjectURL(formData.audioFile) : undefined,
+      imageUrl: formData.imageFile ? URL.createObjectURL(formData.imageFile) : undefined,
     };
 
     dispatch({ type: 'SET_QUESTIONS', payload: [...state.questions, newQuestion] });
     resetForm();
     setShowAddForm(false);
+    alert('Question ajoutée avec succès ! Elle est maintenant disponible pour tous les utilisateurs.');
   };
 
   const handleEditQuestion = (question: Question) => {
@@ -58,8 +62,8 @@ const AdminPanel: React.FC = () => {
       questionText: question.questionText,
       options: [...question.options],
       correctAnswer: question.correctAnswer,
-      level: question.level,
       audioFile: null,
+      imageFile: null,
     });
     setShowAddForm(true);
   };
@@ -74,8 +78,9 @@ const AdminPanel: React.FC = () => {
             questionText: formData.questionText,
             options: formData.options,
             correctAnswer: formData.correctAnswer,
-            level: formData.level,
+            level: q.level, // Keep existing level
             audioUrl: formData.audioFile ? URL.createObjectURL(formData.audioFile) : q.audioUrl,
+            imageUrl: formData.imageFile ? URL.createObjectURL(formData.imageFile) : q.imageUrl,
           }
         : q
     );
@@ -84,12 +89,14 @@ const AdminPanel: React.FC = () => {
     resetForm();
     setShowAddForm(false);
     setEditingQuestion(null);
+    alert('Question mise à jour avec succès !');
   };
 
   const handleDeleteQuestion = (questionId: string) => {
     if (confirm('Êtes-vous sûr de vouloir supprimer cette question ?')) {
       const updatedQuestions = state.questions.filter(q => q.id !== questionId);
       dispatch({ type: 'SET_QUESTIONS', payload: updatedQuestions });
+      alert('Question supprimée avec succès !');
     }
   };
 
@@ -110,6 +117,7 @@ const AdminPanel: React.FC = () => {
     dispatch({ type: 'SET_EXAM_SETS', payload: [...state.examSets, newExamSet] });
     resetExamForm();
     setShowExamForm(false);
+    alert('Nouvel examen créé avec succès !');
   };
 
   const handleUpdateExamSet = () => {
@@ -154,8 +162,8 @@ const AdminPanel: React.FC = () => {
       questionText: '',
       options: ['', '', '', ''],
       correctAnswer: 0,
-      level: 'A1',
       audioFile: null,
+      imageFile: null,
     });
   };
 
@@ -176,6 +184,15 @@ const AdminPanel: React.FC = () => {
     }
   };
 
+  const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file && file.type.startsWith('image/')) {
+      setFormData({ ...formData, imageFile: file });
+    } else {
+      alert('Veuillez sélectionner un fichier image valide');
+    }
+  };
+
   const getExamQuestionCount = (examSetId: number) => {
     return {
       total: state.questions.filter(q => q.examSet === examSetId).length,
@@ -189,13 +206,27 @@ const AdminPanel: React.FC = () => {
         <div className="max-w-7xl mx-auto px-6 py-4">
           <div className="flex items-center justify-between">
             <h1 className="text-2xl font-bold text-gray-900">Panel d'Administration TCF</h1>
-            <button
-              onClick={() => navigate('/')}
-              className="flex items-center space-x-2 px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
-            >
-              <Home className="w-4 h-4" />
-              <span>Retour à l'accueil</span>
-            </button>
+            <div className="flex items-center space-x-4">
+              <button
+                onClick={() => navigate('/users')}
+                className="flex items-center space-x-2 px-4 py-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+              >
+                <span>Gestion Utilisateurs</span>
+              </button>
+              <button
+                onClick={() => navigate('/')}
+                className="flex items-center space-x-2 px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+              >
+                <Home className="w-4 h-4" />
+                <span>Accueil</span>
+              </button>
+              <button
+                onClick={logout}
+                className="flex items-center space-x-2 px-4 py-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+              >
+                <span>Déconnexion</span>
+              </button>
+            </div>
           </div>
         </div>
       </header>
@@ -422,6 +453,23 @@ const AdminPanel: React.FC = () => {
                   )}
 
                   <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Image (optionnel)
+                      </label>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={handleImageUpload}
+                        className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      />
+                      {formData.imageFile && (
+                        <p className="text-sm text-green-600 mt-1">
+                          Image sélectionnée: {formData.imageFile.name}
+                        </p>
+                      )}
+                    </div>
+
                     {formData.options.map((option, index) => (
                       <div key={index}>
                         <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -457,24 +505,6 @@ const AdminPanel: React.FC = () => {
                             Option {String.fromCharCode(65 + index)}
                           </option>
                         ))}
-                      </select>
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Niveau
-                      </label>
-                      <select
-                        value={formData.level}
-                        onChange={(e) => setFormData({ ...formData, level: e.target.value as Question['level'] })}
-                        className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                      >
-                        <option value="A1">A1</option>
-                        <option value="A2">A2</option>
-                        <option value="B1">B1</option>
-                        <option value="B2">B2</option>
-                        <option value="C1">C1</option>
-                        <option value="C2">C2</option>
                       </select>
                     </div>
                   </div>
@@ -542,6 +572,15 @@ const AdminPanel: React.FC = () => {
                             <audio controls className="w-full max-w-xs">
                               <source src={question.audioUrl} type="audio/mpeg" />
                             </audio>
+                          </div>
+                        )}
+                        {question.imageUrl && (
+                          <div className="mt-3">
+                            <img 
+                              src={question.imageUrl} 
+                              alt="Question image" 
+                              className="max-w-xs max-h-48 object-contain border border-gray-200 rounded"
+                            />
                           </div>
                         )}
                       </div>

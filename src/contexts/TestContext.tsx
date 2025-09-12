@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useReducer, ReactNode } from 'react';
+import { mockQuestions } from '../data/mockQuestions';
 
 export interface Question {
   id: string;
@@ -8,6 +9,7 @@ export interface Question {
   options: string[];
   correctAnswer: number;
   audioUrl?: string;
+  imageUrl?: string;
   level: 'A1' | 'A2' | 'B1' | 'B2' | 'C1' | 'C2';
 }
 
@@ -57,7 +59,7 @@ const initialState: TestState = {
   timeRemaining: 90 * 60, // 90 minutes in seconds
   testStarted: false,
   testCompleted: false,
-  questions: [],
+  questions: mockQuestions,
   currentExamSet: 1,
   audioPlayed: {},
   score: 0,
@@ -71,6 +73,24 @@ const initialState: TestState = {
   selectedExamSet: null,
 };
 
+// Load data from localStorage
+const loadFromStorage = (key: string, defaultValue: any) => {
+  try {
+    const saved = localStorage.getItem(key);
+    return saved ? JSON.parse(saved) : defaultValue;
+  } catch {
+    return defaultValue;
+  }
+};
+
+// Save data to localStorage
+const saveToStorage = (key: string, data: any) => {
+  try {
+    localStorage.setItem(key, JSON.stringify(data));
+  } catch (error) {
+    console.error('Failed to save to localStorage:', error);
+  }
+};
 function testReducer(state: TestState, action: TestAction): TestState {
   switch (action.type) {
     case 'START_TEST':
@@ -84,10 +104,15 @@ function testReducer(state: TestState, action: TestAction): TestState {
       };
 
     case 'SET_SECTION':
+      const newSectionQuestions = state.questions.filter(q => 
+        q.section === action.payload && q.examSet === state.currentExamSet
+      );
       return {
         ...state,
         currentSection: action.payload,
-        currentQuestionIndex: 0,
+        currentQuestionIndex: action.payload === 'listening' ? 0 : 
+                            action.payload === 'grammar' ? 0 : 
+                            action.payload === 'reading' ? 0 : state.currentQuestionIndex,
       };
 
     case 'NEXT_QUESTION':
@@ -114,7 +139,12 @@ function testReducer(state: TestState, action: TestAction): TestState {
     case 'TICK_TIMER':
       const newTime = Math.max(0, state.timeRemaining - 1);
       if (newTime === 0) {
-        return { ...state, timeRemaining: newTime, testCompleted: true };
+        return { 
+          ...state, 
+          timeRemaining: newTime, 
+          testCompleted: true,
+          currentSection: 'results'
+        };
       }
       return { ...state, timeRemaining: newTime };
 
@@ -126,6 +156,7 @@ function testReducer(state: TestState, action: TestAction): TestState {
       };
 
     case 'SET_QUESTIONS':
+      saveToStorage('tcf_questions', action.payload);
       return {
         ...state,
         questions: action.payload,
@@ -165,12 +196,13 @@ function testReducer(state: TestState, action: TestAction): TestState {
     case 'RESET_TEST':
       return {
         ...initialState,
-        questions: state.questions,
-        examSets: state.examSets,
+        questions: loadFromStorage('tcf_questions', mockQuestions),
+        examSets: loadFromStorage('tcf_exam_sets', initialState.examSets),
         selectedExamSet: null,
       };
 
     case 'SET_EXAM_SETS':
+      saveToStorage('tcf_exam_sets', action.payload);
       return {
         ...state,
         examSets: action.payload,
@@ -194,7 +226,11 @@ const TestContext = createContext<{
 } | undefined>(undefined);
 
 export function TestProvider({ children }: { children: ReactNode }) {
-  const [state, dispatch] = useReducer(testReducer, initialState);
+  const [state, dispatch] = useReducer(testReducer, {
+    ...initialState,
+    questions: loadFromStorage('tcf_questions', mockQuestions),
+    examSets: loadFromStorage('tcf_exam_sets', initialState.examSets),
+  });
 
   return (
     <TestContext.Provider value={{ state, dispatch }}>
