@@ -114,17 +114,6 @@ const LoginPage: React.FC = () => {
         </form>
 
         {/* Registration Link */}
-        <div className="mt-6 text-center">
-          <p className="text-gray-600 text-sm">
-            Pas de compte ?{' '}
-            <button
-              onClick={() => navigate('/register')}
-              className="text-blue-600 hover:text-blue-700 font-medium"
-            >
-              Créer un compte admin
-            </button>
-          </p>
-        </div>
       </div>
     </div>
   );

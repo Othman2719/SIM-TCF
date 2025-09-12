@@ -47,20 +47,24 @@ export function useSupabaseAuth() {
 
   const fetchUserProfile = async (userId: string) => {
     try {
+      setLoading(true);
       const { data, error } = await supabase
         .from('users')
         .select('*')
         .eq('id', userId)
-        .maybeSingle();
+        .single();
 
       if (error) {
-        console.error('Error fetching user profile:', error);
-        setUser(null);
+        if (error.code === 'PGRST116') {
+          // User profile doesn't exist yet
+          console.log('User profile not found, user needs to complete registration');
+          setUser(null);
+        } else {
+          console.error('Error fetching user profile:', error);
+          setUser(null);
+        }
       } else if (data) {
         setUser(data);
-      } else {
-        // User profile doesn't exist yet, set user to null
-        setUser(null);
       }
     } catch (error) {
       console.error('Error fetching user profile:', error);
@@ -138,6 +142,22 @@ export function useSupabaseAuth() {
   const signIn = async (email: string, password: string) => {
     try {
       setLoading(true);
+      
+      // First check if user exists in our users table
+      const { data: userProfile, error: profileError } = await supabase
+        .from('users')
+        .select('*')
+        .eq('email', email)
+        .single();
+
+      if (profileError || !userProfile) {
+        throw new Error('Utilisateur non trouvé. Contactez l\'administrateur.');
+      }
+
+      if (!userProfile.is_active) {
+        throw new Error('Compte désactivé. Contactez l\'administrateur.');
+      }
+
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
