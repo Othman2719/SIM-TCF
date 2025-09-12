@@ -15,9 +15,12 @@ const LoginPage: React.FC = () => {
   // Redirect if already authenticated
   React.useEffect(() => {
     if (state.isAuthenticated && state.currentUser) {
+      console.log('Already authenticated user detected:', state.currentUser.role);
       if (state.currentUser.role === 'admin') {
+        console.log('Redirecting authenticated admin to /admin');
         navigate('/admin');
       } else {
+        console.log('Redirecting authenticated user to /');
         navigate('/');
       }
     }

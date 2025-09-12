@@ -11,13 +11,15 @@ const HomePage: React.FC = () => {
 
   // Redirect admins to admin panel
   React.useEffect(() => {
-    if (authState.currentUser?.role === 'admin') {
+    if (authState.isAuthenticated && authState.currentUser?.role === 'admin') {
+      console.log('Admin detected in HomePage, redirecting to admin panel');
       navigate('/admin');
     }
-  }, [authState.currentUser, navigate]);
+  }, [authState.isAuthenticated, authState.currentUser, navigate]);
 
   // Don't render homepage for admins
-  if (authState.currentUser?.role === 'admin') {
+  if (authState.isAuthenticated && authState.currentUser?.role === 'admin') {
+    console.log('Admin user detected, not rendering homepage');
     return null;
   }
 

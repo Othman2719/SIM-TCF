@@ -123,15 +123,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   // Navigate after authentication
   useEffect(() => {
-    if (state.currentUser && !state.isLoading) {
+    if (state.currentUser && !state.isLoading && state.isAuthenticated) {
       console.log('User authenticated, navigating...', state.currentUser.role);
       if (state.currentUser.role === 'admin') {
+        console.log('Redirecting admin to /admin');
         navigate('/admin');
       } else {
+        console.log('Redirecting user to /');
         navigate('/');
       }
     }
-  }, [state.currentUser, state.isLoading, navigate]);
+  }, [state.currentUser, state.isLoading, state.isAuthenticated, navigate]);
 
   const fetchUserProfile = async (userId: string) => {
     try {
