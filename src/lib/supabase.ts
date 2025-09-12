@@ -3,21 +3,46 @@ import { createClient } from '@supabase/supabase-js';
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
+// Check if environment variables are properly configured
 if (!supabaseUrl || !supabaseAnonKey) {
-  console.error('Missing Supabase environment variables:', {
-    url: supabaseUrl ? 'Present' : 'Missing',
-    key: supabaseAnonKey ? 'Present' : 'Missing'
-  });
-  console.warn('⚠️  Supabase not configured. Please set up your .env file with VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY');
-  console.warn('📖 See README.md for setup instructions');
+  console.error('🚨 SUPABASE CONFIGURATION ERROR 🚨');
+  console.error('Missing required environment variables:');
+  console.error('- VITE_SUPABASE_URL:', supabaseUrl ? '✅ Present' : '❌ Missing');
+  console.error('- VITE_SUPABASE_ANON_KEY:', supabaseAnonKey ? '✅ Present' : '❌ Missing');
+  console.error('');
+  console.error('🔧 TO FIX THIS:');
+  console.error('1. Check your .env file in the project root');
+  console.error('2. Add your Supabase credentials:');
+  console.error('   VITE_SUPABASE_URL=https://your-project.supabase.co');
+  console.error('   VITE_SUPABASE_ANON_KEY=your-anon-key-here');
+  console.error('3. Get credentials from: https://supabase.com → Your Project → Settings → API');
+  console.error('4. Restart the development server');
+  console.error('');
 }
 
-console.log('Supabase configuration:', {
-  url: supabaseUrl,
-  keyLength: supabaseAnonKey?.length || 0
-});
+// Check if values are still placeholders
+if (supabaseUrl?.includes('your-project-id') || supabaseAnonKey?.includes('your-anon-key')) {
+  console.error('🚨 PLACEHOLDER VALUES DETECTED 🚨');
+  console.error('You are using placeholder values in your .env file.');
+  console.error('Please replace them with your actual Supabase credentials.');
+  console.error('');
+}
 
-export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+// Only log success if properly configured
+if (supabaseUrl && supabaseAnonKey && 
+    !supabaseUrl.includes('your-project-id') && 
+    !supabaseAnonKey.includes('your-anon-key')) {
+  console.log('✅ Supabase configured successfully:', {
+    url: supabaseUrl,
+    keyLength: supabaseAnonKey.length
+  });
+}
+
+// Create client with fallback values to prevent crashes
+export const supabase = createClient(
+  supabaseUrl || 'https://placeholder.supabase.co', 
+  supabaseAnonKey || 'placeholder-key', 
+  {
   auth: {
     autoRefreshToken: true,
     persistSession: true,
@@ -34,6 +59,14 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
     }
   }
 });
+
+// Export configuration status for use in components
+export const isSupabaseConfigured = () => {
+  return !!(supabaseUrl && 
+           supabaseAnonKey && 
+           !supabaseUrl.includes('your-project-id') && 
+           !supabaseAnonKey.includes('your-anon-key'));
+};
 
 // Database types
 export interface Database {

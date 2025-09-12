@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useReducer, ReactNode, useEffect } from 'react';
-import { supabase } from '../lib/supabase';
+import { supabase, isSupabaseConfigured } from '../lib/supabase';
 
 export interface User {
   id: string;
@@ -160,9 +160,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const loadUsers = async () => {
     try {
-      // Check if Supabase is properly configured
-      if (!import.meta.env.VITE_SUPABASE_URL || !import.meta.env.VITE_SUPABASE_ANON_KEY) {
-        console.error('Supabase environment variables are missing. Please check your .env file.');
+      // Check if Supabase is properly configured before making requests
+      if (!isSupabaseConfigured()) {
+        console.warn('⚠️ Supabase not configured. Skipping user data load.');
+        console.warn('The app will work in demo mode until Supabase is properly set up.');
         return;
       }
 
@@ -188,14 +189,29 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         dispatch({ type: 'SET_USERS', payload: users });
       }
     } catch (error) {
-      console.error('Error loading users:', error);
-      // Don't throw the error, just log it to prevent app crashes
-      // This allows the app to continue working even if Supabase is not configured
+      if (error instanceof TypeError && error.message.includes('Failed to fetch')) {
+        console.error('🚨 SUPABASE CONNECTION FAILED 🚨');
+        console.error('Cannot connect to Supabase. Please check:');
+        console.error('1. Your internet connection');
+        console.error('2. Your .env file has correct Supabase credentials');
+        console.error('3. Your Supabase project is active');
+        console.error('');
+        console.error('The app will continue in demo mode.');
+      } else {
+        console.error('Error loading users:', error);
+      }
     }
   };
 
   const login = async (email: string, password: string): Promise<boolean> => {
     dispatch({ type: 'SET_LOADING', payload: true });
+
+    // Check if Supabase is configured
+    if (!isSupabaseConfigured()) {
+      console.error('Cannot login: Supabase not configured');
+      dispatch({ type: 'SET_LOADING', payload: false });
+      return false;
+    }
 
     try {
       const { data, error } = await supabase.auth.signInWithPassword({
@@ -210,7 +226,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         return true;
       }
     } catch (error) {
-      console.error('Login error:', error);
+      if (error instanceof TypeError && error.message.includes('Failed to fetch')) {
+        console.error('🚨 LOGIN FAILED - SUPABASE CONNECTION ERROR 🚨');
+        console.error('Cannot connect to Supabase for authentication.');
+      } else {
+        console.error('Login error:', error);
+      }
       dispatch({ type: 'SET_LOADING', payload: false });
     }
     
@@ -227,6 +248,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const createUser = async (userData: { email: string; password: string; username: string; role?: 'admin' | 'client' }) => {
+    if (!isSupabaseConfigured()) {
+      throw new Error('Cannot create user: Supabase not configured');
+    }
+
     try {
       // Create auth user
       const { data: authData, error: authError } = await supabase.auth.signUp({
