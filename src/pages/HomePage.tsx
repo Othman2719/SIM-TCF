@@ -1,11 +1,13 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTest } from '../contexts/TestContext';
+import { useAuth } from '../contexts/AuthContext';
 import { BookOpen, Clock, Headphones, PenTool, FileText, Target, ChevronRight, Lock, AlertCircle } from 'lucide-react';
 
 const HomePage: React.FC = () => {
   const navigate = useNavigate();
   const { state, dispatch } = useTest();
+  const { state: authState, logout } = useAuth();
   const [selectedExam, setSelectedExam] = React.useState<number>(1);
   const [showStartModal, setShowStartModal] = React.useState(false);
 
@@ -47,12 +49,25 @@ const HomePage: React.FC = () => {
                 <p className="text-sm text-blue-600">Test de Connaissance du Français</p>
               </div>
             </div>
-            <button
-              onClick={() => navigate('/admin')}
-              className="px-4 py-2 text-sm text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
-            >
-              Administration
-            </button>
+            <div className="flex items-center space-x-4">
+              <div className="text-sm text-gray-600">
+                Bonjour, <span className="font-medium">{authState.currentUser?.username}</span>
+              </div>
+              {authState.currentUser?.role === 'admin' && (
+                <button
+                  onClick={() => navigate('/admin')}
+                  className="px-4 py-2 text-sm text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                >
+                  Administration
+                </button>
+              )}
+              <button
+                onClick={logout}
+                className="px-4 py-2 text-sm text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+              >
+                Déconnexion
+              </button>
+            </div>
           </div>
         </div>
       </header>

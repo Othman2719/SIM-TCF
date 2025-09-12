@@ -1,12 +1,14 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTest } from '../contexts/TestContext';
+import { useAuth } from '../contexts/AuthContext';
 import { Plus, Edit2, Trash2, Upload, Home, Save, FolderPlus, Folder } from 'lucide-react';
 import { Question, ExamSet } from '../contexts/TestContext';
 
 const AdminPanel: React.FC = () => {
   const navigate = useNavigate();
   const { state, dispatch } = useTest();
+  const { logout } = useAuth();
   const [activeTab, setActiveTab] = useState<'listening' | 'grammar' | 'reading'>('listening');
   const [selectedExamSet, setSelectedExamSet] = useState<number>(1);
   const [showAddForm, setShowAddForm] = useState(false);
@@ -189,13 +191,27 @@ const AdminPanel: React.FC = () => {
         <div className="max-w-7xl mx-auto px-6 py-4">
           <div className="flex items-center justify-between">
             <h1 className="text-2xl font-bold text-gray-900">Panel d'Administration TCF</h1>
-            <button
-              onClick={() => navigate('/')}
-              className="flex items-center space-x-2 px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
-            >
-              <Home className="w-4 h-4" />
-              <span>Retour à l'accueil</span>
-            </button>
+            <div className="flex items-center space-x-4">
+              <button
+                onClick={() => navigate('/users')}
+                className="flex items-center space-x-2 px-4 py-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+              >
+                <span>Gestion Utilisateurs</span>
+              </button>
+              <button
+                onClick={() => navigate('/')}
+                className="flex items-center space-x-2 px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+              >
+                <Home className="w-4 h-4" />
+                <span>Accueil</span>
+              </button>
+              <button
+                onClick={logout}
+                className="flex items-center space-x-2 px-4 py-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+              >
+                <span>Déconnexion</span>
+              </button>
+            </div>
           </div>
         </div>
       </header>
