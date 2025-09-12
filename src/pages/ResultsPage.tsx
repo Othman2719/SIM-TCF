@@ -3,6 +3,7 @@ import { useTest } from '../contexts/TestContext';
 import { useAuth } from '../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { Award, CheckCircle, XCircle, RotateCcw, Home, Download, Printer } from 'lucide-react';
+import { downloadCertificatePDF, printCertificatePDF, CertificateData } from '../utils/pdfGenerator';
 
 const ResultsPage: React.FC = () => {
   const { state, dispatch } = useTest();
@@ -71,11 +72,35 @@ const ResultsPage: React.FC = () => {
   };
 
   const handlePrintCertificate = () => {
-    window.print();
+    const certificateData: CertificateData = {
+      userName: authState.currentUser?.username || 'UTILISATEUR',
+      userEmail: authState.currentUser?.email || 'test@example.com',
+      score: state.score,
+      level: state.level,
+      listeningScore: Math.round((listeningResults.percentage / 100) * (state.score / 3)),
+      grammarScore: Math.round((grammarResults.percentage / 100) * (state.score / 3)),
+      readingScore: Math.round((readingResults.percentage / 100) * (state.score / 3)),
+      certificateNumber,
+      date: currentDate
+    };
+    
+    printCertificatePDF(certificateData);
   };
 
   const correctAnswers = getCorrectAnswers();
-  const incorrectAnswers = getIncorrectAnswers();
+    const certificateData: CertificateData = {
+      userName: authState.currentUser?.username || 'UTILISATEUR',
+      userEmail: authState.currentUser?.email || 'test@example.com',
+      score: state.score,
+      level: state.level,
+      listeningScore: Math.round((listeningResults.percentage / 100) * (state.score / 3)),
+      grammarScore: Math.round((grammarResults.percentage / 100) * (state.score / 3)),
+      readingScore: Math.round((readingResults.percentage / 100) * (state.score / 3)),
+      certificateNumber,
+      date: currentDate
+    };
+    
+    downloadCertificatePDF(certificateData);
   const unanswered = getUnansweredQuestions();
   const currentExamQuestions = state.questions.filter(q => q.examSet === state.currentExamSet);
   const totalQuestions = currentExamQuestions.length;
