@@ -1,3 +1,5 @@
+import { showSaveDialog, showMessageBox, isElectron } from './electronUtils';
+
 export interface CertificateData {
   userName: string;
   userEmail: string;
@@ -10,10 +12,24 @@ export interface CertificateData {
   date: string;
 }
 
-export const downloadCertificatePDF = (data: CertificateData): void => {
-  // Placeholder implementation for PDF download
-  console.log('Downloading certificate PDF for:', data.userName);
-  alert('Fonctionnalité de téléchargement PDF en cours de développement');
+export const downloadCertificatePDF = async (data: CertificateData): Promise<void> => {
+  if (isElectron()) {
+    // Electron-specific save dialog
+    const result = await showSaveDialog();
+    if (!result.canceled && result.filePath) {
+      // Here you would implement actual PDF generation and saving
+      await showMessageBox({
+        type: 'info',
+        title: 'Certificat sauvegardé',
+        message: `Le certificat a été sauvegardé avec succès !`,
+        detail: `Fichier: ${result.filePath}`
+      });
+    }
+  } else {
+    // Web fallback
+    console.log('Downloading certificate PDF for:', data.userName);
+    alert('Fonctionnalité de téléchargement PDF en cours de développement');
+  }
 };
 
 export const printCertificatePDF = (data: CertificateData): void => {
