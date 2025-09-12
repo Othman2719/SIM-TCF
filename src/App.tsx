@@ -6,6 +6,7 @@ import TestInterface from './pages/TestInterface';
 import AdminPanel from './pages/AdminPanel';
 import ResultsPage from './pages/ResultsPage';
 import LoginPage from './pages/LoginPage';
+import RegisterPage from './pages/RegisterPage';
 import UserManagement from './pages/UserManagement';
 import { TestProvider } from './contexts/TestContext';
 import ProtectedRoute from './components/ProtectedRoute';
@@ -13,12 +14,13 @@ import './App.css';
 
 function App() {
   return (
-    <AuthProvider>
-      <TestProvider>
-        <Router>
+    <Router>
+      <AuthProvider>
+        <TestProvider>
           <div className="min-h-screen bg-gray-50">
             <Routes>
               <Route path="/login" element={<LoginPage />} />
+              <Route path="/register" element={<RegisterPage />} />
               <Route path="/" element={
                 <ProtectedRoute>
                   <HomePage />
@@ -47,9 +49,9 @@ function App() {
               <Route path="*" element={<Navigate to="/" replace />} />
             </Routes>
           </div>
-        </Router>
-      </TestProvider>
-    </AuthProvider>
+        </TestProvider>
+      </AuthProvider>
+    </Router>
   );
 }
 
