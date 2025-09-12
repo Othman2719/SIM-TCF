@@ -8,6 +8,19 @@ const HomePage: React.FC = () => {
   const navigate = useNavigate();
   const { state, dispatch } = useTest();
   const { state: authState, logout } = useAuth();
+
+  // Redirect admins to admin panel
+  React.useEffect(() => {
+    if (authState.currentUser?.role === 'admin') {
+      navigate('/admin');
+    }
+  }, [authState.currentUser, navigate]);
+
+  // Don't render homepage for admins
+  if (authState.currentUser?.role === 'admin') {
+    return null;
+  }
+
   const [selectedExam, setSelectedExam] = React.useState<number>(1);
   const [showStartModal, setShowStartModal] = React.useState(false);
 

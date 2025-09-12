@@ -1,9 +1,11 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { User } from '../contexts/AuthContext';
-import { Plus, Edit2, Trash2, Users, Mail, Calendar, ToggleLeft, ToggleRight, Save, X } from 'lucide-react';
+import { Plus, Edit2, Trash2, Users, Mail, Calendar, ToggleLeft, ToggleRight, Save, X, ArrowLeft } from 'lucide-react';
 
 const UserManagement: React.FC = () => {
+  const navigate = useNavigate();
   const { state, dispatch, createUser } = useAuth();
   const [showAddForm, setShowAddForm] = useState(false);
   const [editingUser, setEditingUser] = useState<User | null>(null);
@@ -111,11 +113,20 @@ const UserManagement: React.FC = () => {
     <div className="space-y-8">
       {/* Header */}
       <div className="flex justify-between items-center">
-        <div>
-          <h2 className="text-2xl font-bold text-gray-900">Gestion des Utilisateurs</h2>
-          <p className="text-gray-600 mt-1">
-            Gérez les comptes utilisateurs et leurs accès au système
-          </p>
+        <div className="flex items-center space-x-4">
+          <button
+            onClick={() => navigate('/admin')}
+            className="flex items-center space-x-2 px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+          >
+            <ArrowLeft className="w-4 h-4" />
+            <span>Retour</span>
+          </button>
+          <div>
+            <h2 className="text-2xl font-bold text-gray-900">Gestion des Utilisateurs</h2>
+            <p className="text-gray-600 mt-1">
+              Gérez les comptes utilisateurs et leurs accès au système
+            </p>
+          </div>
         </div>
         <button
           onClick={() => setShowAddForm(true)}
