@@ -2,6 +2,7 @@ import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTest } from '../contexts/TestContext';
 import { useAuth } from '../contexts/AuthContext';
+import { onMenuNewTest, removeAllListeners } from '../utils/electronUtils';
 import { BookOpen, Clock, Headphones, PenTool, FileText, Target, ChevronRight, Lock, AlertCircle } from 'lucide-react';
 
 const HomePage: React.FC = () => {
