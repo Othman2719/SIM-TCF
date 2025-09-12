@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useReducer, ReactNode } from 'react';
-import { mockQuestions } from '../data/mockQuestions';
+import { ExamService } from '../services/examService';
 
 export interface Question {
   id: string;
@@ -11,6 +11,7 @@ export interface Question {
   audioUrl?: string;
   imageUrl?: string;
   level: 'A1' | 'A2' | 'B1' | 'B2' | 'C1' | 'C2';
+  explanation?: string;
 }
 
 export interface ExamSet {
@@ -59,38 +60,17 @@ const initialState: TestState = {
   timeRemaining: 90 * 60, // 90 minutes in seconds
   testStarted: false,
   testCompleted: false,
-  questions: mockQuestions,
+  questions: [],
   currentExamSet: 1,
   audioPlayed: {},
   score: 0,
   level: 'A1',
   examSets: [
-    { id: 1, name: 'TCF - Examen Principal', description: 'Examen principal du Test de Connaissance du Français avec questions de tous niveaux', totalQuestions: 70, isActive: true },
-    { id: 2, name: 'TCF - Examen 2', description: 'Deuxième examen du Test de Connaissance du Français', totalQuestions: 10, isActive: false },
-    { id: 3, name: 'TCF - Examen 3', description: 'Troisième examen du Test de Connaissance du Français', totalQuestions: 10, isActive: false },
-    { id: 4, name: 'TCF - Examen 4', description: 'Quatrième examen du Test de Connaissance du Français', totalQuestions: 5, isActive: false },
+    { id: 1, name: 'TCF - Examen Principal', description: 'Examen principal du Test de Connaissance du Français', totalQuestions: 0, isActive: true },
   ],
   selectedExamSet: null,
 };
 
-// Load data from localStorage
-const loadFromStorage = (key: string, defaultValue: any) => {
-  try {
-    const saved = localStorage.getItem(key);
-    return saved ? JSON.parse(saved) : defaultValue;
-  } catch {
-    return defaultValue;
-  }
-};
-
-// Save data to localStorage
-const saveToStorage = (key: string, data: any) => {
-  try {
-    localStorage.setItem(key, JSON.stringify(data));
-  } catch (error) {
-    console.error('Failed to save to localStorage:', error);
-  }
-};
 function testReducer(state: TestState, action: TestAction): TestState {
   switch (action.type) {
     case 'START_TEST':
@@ -156,7 +136,6 @@ function testReducer(state: TestState, action: TestAction): TestState {
       };
 
     case 'SET_QUESTIONS':
-      saveToStorage('tcf_questions', action.payload);
       return {
         ...state,
         questions: action.payload,
@@ -196,13 +175,12 @@ function testReducer(state: TestState, action: TestAction): TestState {
     case 'RESET_TEST':
       return {
         ...initialState,
-        questions: loadFromStorage('tcf_questions', mockQuestions),
-        examSets: loadFromStorage('tcf_exam_sets', initialState.examSets),
+        questions: state.questions,
+        examSets: state.examSets,
         selectedExamSet: null,
       };
 
     case 'SET_EXAM_SETS':
-      saveToStorage('tcf_exam_sets', action.payload);
       return {
         ...state,
         examSets: action.payload,
@@ -226,11 +204,38 @@ const TestContext = createContext<{
 } | undefined>(undefined);
 
 export function TestProvider({ children }: { children: ReactNode }) {
-  const [state, dispatch] = useReducer(testReducer, {
-    ...initialState,
-    questions: loadFromStorage('tcf_questions', mockQuestions),
-    examSets: loadFromStorage('tcf_exam_sets', initialState.examSets),
-  });
+  const [state, dispatch] = useReducer(testReducer, initialState);
+
+  // Load exam sets and questions from Supabase
+  React.useEffect(() => {
+    const loadData = async () => {
+      try {
+        // Load exam sets
+        const examSets = await ExamService.getExamSets();
+        dispatch({ type: 'SET_EXAM_SETS', payload: examSets });
+
+        // Load questions for all exam sets
+        const questions = await ExamService.getQuestions();
+        const formattedQuestions = questions.map(q => ({
+          id: q.id,
+          section: q.section,
+          examSet: q.exam_set_id,
+          questionText: q.question_text,
+          options: q.options,
+          correctAnswer: q.correct_answer,
+          level: q.level,
+          audioUrl: q.audio_url || undefined,
+          imageUrl: q.image_url || undefined,
+          explanation: q.explanation || undefined,
+        }));
+        dispatch({ type: 'SET_QUESTIONS', payload: formattedQuestions });
+      } catch (error) {
+        console.error('Error loading exam data:', error);
+      }
+    };
+
+    loadData();
+  }, []);
 
   return (
     <TestContext.Provider value={{ state, dispatch }}>

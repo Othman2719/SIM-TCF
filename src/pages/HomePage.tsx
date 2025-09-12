@@ -64,7 +64,7 @@ const HomePage: React.FC = () => {
             </div>
             <div className="flex items-center space-x-4">
               <div className="text-sm text-gray-600">
-                Bonjour, <span className="font-medium">{authState.currentUser?.username}</span>
+                Bonjour, <span className="font-medium">{authState.currentUser?.full_name || authState.currentUser?.username}</span>
               </div>
               {authState.currentUser?.role === 'admin' && (
                 <button
