@@ -9,6 +9,7 @@ export interface Question {
   options: string[];
   correctAnswer: number;
   audioUrl?: string;
+  imageUrl?: string;
   level: 'A1' | 'A2' | 'B1' | 'B2' | 'C1' | 'C2';
 }
 
