@@ -5,7 +5,7 @@ import { BookOpen, Clock, Headphones, PenTool, FileText, Target, ChevronRight } 
 
 const HomePage: React.FC = () => {
   const navigate = useNavigate();
-  const { dispatch } = useTest();
+  const { state, dispatch } = useTest();
 
   const handleStartTest = (examSetId?: number) => {
     if (examSetId) {
