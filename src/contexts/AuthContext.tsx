@@ -160,6 +160,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const loadUsers = async () => {
     try {
+      // Check if Supabase is properly configured
+      if (!import.meta.env.VITE_SUPABASE_URL || !import.meta.env.VITE_SUPABASE_ANON_KEY) {
+        console.error('Supabase environment variables are missing. Please check your .env file.');
+        return;
+      }
+
       const { data, error } = await supabase
         .from('users')
         .select('*')
@@ -183,6 +189,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
     } catch (error) {
       console.error('Error loading users:', error);
+      // Don't throw the error, just log it to prevent app crashes
+      // This allows the app to continue working even if Supabase is not configured
     }
   };
 

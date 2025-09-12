@@ -8,7 +8,8 @@ if (!supabaseUrl || !supabaseAnonKey) {
     url: supabaseUrl ? 'Present' : 'Missing',
     key: supabaseAnonKey ? 'Present' : 'Missing'
   });
-  throw new Error('Missing Supabase environment variables. Please check your .env file and restart the development server.');
+  console.warn('⚠️  Supabase not configured. Please set up your .env file with VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY');
+  console.warn('📖 See README.md for setup instructions');
 }
 
 console.log('Supabase configuration:', {
