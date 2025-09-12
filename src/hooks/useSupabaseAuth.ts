@@ -143,21 +143,7 @@ export function useSupabaseAuth() {
     try {
       setLoading(true);
       
-      // First check if user exists in our users table
-      const { data: userProfile, error: profileError } = await supabase
-        .from('users')
-        .select('*')
-        .eq('email', email)
-        .single();
-
-      if (profileError || !userProfile) {
-        throw new Error('Utilisateur non trouvé. Contactez l\'administrateur.');
-      }
-
-      if (!userProfile.is_active) {
-        throw new Error('Compte désactivé. Contactez l\'administrateur.');
-      }
-
+      // Direct authentication attempt
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
@@ -168,7 +154,17 @@ export function useSupabaseAuth() {
       return { success: true, data };
     } catch (error: any) {
       console.error('Sign in error:', error);
-      return { success: false, error: error.message };
+      let errorMessage = 'Erreur de connexion';
+      
+      if (error.message?.includes('Invalid login credentials')) {
+        errorMessage = 'Email ou mot de passe incorrect';
+      } else if (error.message?.includes('Email not confirmed')) {
+        errorMessage = 'Email non confirmé';
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+      
+      return { success: false, error: errorMessage };
     } finally {
       setLoading(false);
     }

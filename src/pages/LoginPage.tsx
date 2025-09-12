@@ -21,12 +21,26 @@ const LoginPage: React.FC = () => {
       return;
     }
 
-    const result = await signIn(formData.email, formData.password);
-    
-    if (result.success) {
-      navigate('/');
-    } else {
-      setError(result.error || 'Email ou mot de passe incorrect');
+    // Add timeout to prevent hanging
+    const timeoutPromise = new Promise((_, reject) => {
+      setTimeout(() => reject(new Error('Connexion expirée. Veuillez réessayer.')), 10000);
+    });
+
+    try {
+      const result = await Promise.race([
+        signIn(formData.email, formData.password),
+        timeoutPromise
+      ]);
+      
+      if (result && typeof result === 'object' && 'success' in result) {
+        if (result.success) {
+          navigate('/');
+        } else {
+          setError(result.error || 'Email ou mot de passe incorrect');
+        }
+      }
+    } catch (error: any) {
+      setError(error.message || 'Erreur de connexion. Veuillez réessayer.');
     }
   };
 
