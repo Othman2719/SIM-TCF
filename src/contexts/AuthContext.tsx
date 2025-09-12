@@ -137,15 +137,28 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       console.log('Fetching user profile for:', userId);
       
-      const { data, error } = await supabase
+      // Add timeout to prevent hanging
+      const timeoutPromise = new Promise((_, reject) => {
+        setTimeout(() => reject(new Error('Profile fetch timeout')), 5000);
+      });
+
+      const fetchPromise = supabase
         .from('users')
         .select('*')
         .eq('id', userId)
         .single();
 
+      const { data, error } = await Promise.race([fetchPromise, timeoutPromise]);
+
       if (error) {
         console.error('Profile fetch error:', error);
-        dispatch({ type: 'SET_ERROR', payload: 'Profil utilisateur non trouvé' });
+        // If user doesn't exist in users table, create it
+        if (error.code === 'PGRST116') {
+          console.log('User not found in users table, creating...');
+          await createUserProfile(userId);
+          return;
+        }
+        dispatch({ type: 'SET_ERROR', payload: 'Erreur de chargement du profil' });
         return;
       }
 
@@ -158,6 +171,44 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     } catch (error: any) {
       console.error('Profile fetch error:', error);
       dispatch({ type: 'SET_ERROR', payload: error.message });
+    }
+  };
+
+  const createUserProfile = async (userId: string) => {
+    try {
+      // Get user email from auth
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        dispatch({ type: 'SET_ERROR', payload: 'Utilisateur non trouvé' });
+        return;
+      }
+
+      const userData = {
+        id: userId,
+        email: user.email || '',
+        username: user.email?.split('@')[0] || 'user',
+        full_name: user.user_metadata?.full_name || user.email?.split('@')[0] || 'User',
+        role: 'client' as const,
+        is_active: true,
+      };
+
+      const { data, error } = await supabase
+        .from('users')
+        .insert(userData)
+        .select()
+        .single();
+
+      if (error) {
+        console.error('Error creating user profile:', error);
+        dispatch({ type: 'SET_ERROR', payload: 'Erreur de création du profil' });
+        return;
+      }
+
+      console.log('User profile created:', data);
+      dispatch({ type: 'SET_USER', payload: data });
+    } catch (error: any) {
+      console.error('Create profile error:', error);
+      dispatch({ type: 'SET_ERROR', payload: 'Erreur de création du profil' });
     }
   };
 
