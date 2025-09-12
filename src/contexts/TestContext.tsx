@@ -50,7 +50,8 @@ type TestAction =
   | { type: 'CALCULATE_SCORE' }
   | { type: 'RESET_TEST' }
   | { type: 'SET_EXAM_SETS'; payload: ExamSet[] }
-  | { type: 'SELECT_EXAM_SET'; payload: number };
+  | { type: 'SELECT_EXAM_SET'; payload: number }
+  | { type: 'SET_QUESTION_INDEX'; payload: number };
 
 const initialState: TestState = {
   currentSection: 'home',
@@ -104,15 +105,18 @@ function testReducer(state: TestState, action: TestAction): TestState {
       };
 
     case 'SET_SECTION':
-      const newSectionQuestions = state.questions.filter(q => 
-        q.section === action.payload && q.examSet === state.currentExamSet
-      );
       return {
         ...state,
         currentSection: action.payload,
         currentQuestionIndex: action.payload === 'listening' ? 0 : 
                             action.payload === 'grammar' ? 0 : 
                             action.payload === 'reading' ? 0 : state.currentQuestionIndex,
+      };
+
+    case 'SET_QUESTION_INDEX':
+      return {
+        ...state,
+        currentQuestionIndex: action.payload,
       };
 
     case 'NEXT_QUESTION':
