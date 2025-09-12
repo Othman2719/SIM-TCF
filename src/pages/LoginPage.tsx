@@ -15,28 +15,19 @@ const LoginPage: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
-    console.log('Form submitted with:', { email: formData.email });
 
     if (!formData.email || !formData.password) {
       setError('Veuillez remplir tous les champs');
       return;
     }
 
-    try {
-      console.log('Calling signIn...');
-      const result = await signIn(formData.email, formData.password);
-      console.log('SignIn result:', result);
-      
-      if (result.success) {
-        console.log('Login successful, navigating...');
-        navigate('/');
-      } else {
-        console.log('Login failed:', result.error);
-        setError(result.error || 'Email ou mot de passe incorrect');
-      }
-    } catch (error: any) {
-      console.error('Login error:', error);
-      setError(error.message || 'Erreur de connexion. Veuillez réessayer.');
+    const result = await signIn(formData.email, formData.password);
+    
+    if (result.success) {
+      // Navigation will be handled by the auth state change
+      // Don't navigate immediately
+    } else {
+      setError(result.error || 'Email ou mot de passe incorrect');
     }
   };
 

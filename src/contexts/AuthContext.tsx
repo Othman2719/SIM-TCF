@@ -1,4 +1,5 @@
 import React, { createContext, useContext, ReactNode } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useSupabaseAuth, AuthUser } from '../hooks/useSupabaseAuth';
 
 export type User = AuthUser;
@@ -19,12 +20,25 @@ const AuthContext = createContext<{
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const { user, loading, signIn, signUp, signOut, updateProfile } = useSupabaseAuth();
+  const navigate = useNavigate();
 
   const state: AuthState = {
     currentUser: user,
     isAuthenticated: !!user,
     isLoading: loading,
   };
+
+  // Handle navigation after successful authentication
+  React.useEffect(() => {
+    if (user && !loading) {
+      // User is authenticated, navigate to appropriate page
+      if (user.role === 'admin') {
+        navigate('/admin');
+      } else {
+        navigate('/');
+      }
+    }
+  }, [user, loading, navigate]);
 
   const logout = async () => {
     await signOut();

@@ -20,20 +20,29 @@ export function useSupabaseAuth() {
 
   useEffect(() => {
     // Get initial session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      if (session?.user) {
-        fetchUserProfile(session.user.id);
-      } else {
+    const getInitialSession = async () => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        setSession(session);
+        if (session?.user) {
+          await fetchUserProfile(session.user.id);
+        }
+      } catch (error) {
+        console.error('Error getting initial session:', error);
+      } finally {
         setLoading(false);
       }
-    });
+    };
+
+    getInitialSession();
 
     // Listen for auth changes
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(async (event, session) => {
+      console.log('Auth state changed:', event, !!session);
       setSession(session);
+      
       if (session?.user) {
         await fetchUserProfile(session.user.id);
       } else {
@@ -47,30 +56,65 @@ export function useSupabaseAuth() {
 
   const fetchUserProfile = async (userId: string) => {
     try {
-      setLoading(true);
+      console.log('Fetching user profile for:', userId);
+      
       const { data, error } = await supabase
         .from('users')
         .select('*')
         .eq('id', userId)
-        .single();
+        .maybeSingle();
 
       if (error) {
-        if (error.code === 'PGRST116') {
-          // User profile doesn't exist yet
-          console.log('User profile not found, user needs to complete registration');
-          setUser(null);
-        } else {
-          console.error('Error fetching user profile:', error);
-          setUser(null);
-        }
+        console.error('Error fetching user profile:', error);
+        setUser(null);
       } else if (data) {
+        console.log('User profile loaded:', data);
         setUser(data);
+      } else {
+        console.log('No user profile found');
+        setUser(null);
       }
     } catch (error) {
       console.error('Error fetching user profile:', error);
       setUser(null);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const signIn = async (email: string, password: string) => {
+    try {
+      setLoading(true);
+      console.log('Starting sign in for:', email);
+      
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+
+      console.log('Auth sign in result:', { success: !!data.user, error: error?.message });
+
+      if (error) {
+        setLoading(false);
+        throw error;
+      }
+
+      // Don't set loading to false here - let the auth state change handle it
+      return { success: true, data };
+    } catch (error: any) {
+      console.error('Sign in error:', error);
+      setLoading(false);
+      
+      let errorMessage = 'Erreur de connexion';
+      if (error.message?.includes('Invalid login credentials')) {
+        errorMessage = 'Email ou mot de passe incorrect';
+      } else if (error.message?.includes('Email not confirmed')) {
+        errorMessage = 'Email non confirmé';
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+      
+      return { success: false, error: errorMessage };
     }
   };
 
@@ -114,20 +158,6 @@ export function useSupabaseAuth() {
           });
 
         if (profileError) throw profileError;
-
-        // Create default subscription - only if user profile was created successfully
-        const { error: subscriptionError } = await supabase
-          .from('user_subscriptions')
-          .insert({
-            user_id: authData.user.id,
-            subscription_type: 'free',
-            is_active: true,
-          });
-
-        // Don't throw error for subscription creation failure, just log it
-        if (subscriptionError) {
-          console.warn('Failed to create default subscription:', subscriptionError);
-        }
       }
 
       return { success: true, data: authData };
@@ -136,42 +166,6 @@ export function useSupabaseAuth() {
       return { success: false, error: error.message };
     } finally {
       setLoading(false);
-    }
-  };
-
-  const signIn = async (email: string, password: string) => {
-    try {
-      setLoading(true);
-      console.log('Starting sign in process...', { email });
-      
-      // Direct authentication attempt
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      });
-
-      console.log('Auth response:', { data: !!data, error: error?.message });
-
-      if (error) throw error;
-
-      return { success: true, data };
-    } catch (error: any) {
-      console.error('Sign in error:', error);
-      setLoading(false); // Ensure loading is reset on error
-      let errorMessage = 'Erreur de connexion';
-      
-      if (error.message?.includes('Invalid login credentials')) {
-        errorMessage = 'Email ou mot de passe incorrect';
-      } else if (error.message?.includes('Email not confirmed')) {
-        errorMessage = 'Email non confirmé';
-      } else if (error.message) {
-        errorMessage = error.message;
-      }
-      
-      return { success: false, error: errorMessage };
-    } finally {
-      // Don't set loading false here, let the auth state change handle it
-      console.log('Sign in process completed');
     }
   };
 
