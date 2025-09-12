@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useReducer, ReactNode } from 'react';
 import { mockQuestions } from '../data/mockQuestions';
 import { supabase } from '../lib/supabase';
+import { isSupabaseConfigured } from '../lib/supabase';
 import { useAuth } from './AuthContext';
 
 export interface Question {
@@ -285,6 +286,12 @@ export function TestProvider({ children }: { children: ReactNode }) {
 
   // Load exam sets from Supabase
   const loadExamSets = async () => {
+    // Check if Supabase is properly configured before making requests
+    if (!isSupabaseConfigured()) {
+      console.warn('⚠️ Supabase not configured. Using local exam sets data.');
+      return;
+    }
+
     try {
       const { data, error } = await supabase
         .from('exam_sets')
@@ -312,12 +319,22 @@ export function TestProvider({ children }: { children: ReactNode }) {
         dispatch({ type: 'SET_EXAM_SETS', payload: formattedExamSets });
       }
     } catch (error) {
-      console.error('Error loading exam sets:', error);
+      if (error instanceof TypeError && error.message.includes('Failed to fetch')) {
+        console.warn('⚠️ Cannot connect to Supabase. Using local exam sets data.');
+      } else {
+        console.error('Error loading exam sets:', error);
+      }
     }
   };
 
   // Load questions from Supabase
   const loadQuestions = async () => {
+    // Check if Supabase is properly configured before making requests
+    if (!isSupabaseConfigured()) {
+      console.warn('⚠️ Supabase not configured. Using local questions data.');
+      return;
+    }
+
     try {
       const { data, error } = await supabase
         .from('questions')
@@ -349,7 +366,11 @@ export function TestProvider({ children }: { children: ReactNode }) {
         dispatch({ type: 'SET_QUESTIONS', payload: formattedQuestions });
       }
     } catch (error) {
-      console.error('Error loading questions:', error);
+      if (error instanceof TypeError && error.message.includes('Failed to fetch')) {
+        console.warn('⚠️ Cannot connect to Supabase. Using local questions data.');
+      } else {
+        console.error('Error loading questions:', error);
+      }
     }
   };
 

@@ -22,10 +22,7 @@ if (!supabaseUrl || !supabaseAnonKey) {
 
 // Check if values are still placeholders
 if (supabaseUrl?.includes('your-project-id') || supabaseAnonKey?.includes('your-anon-key')) {
-  console.error('🚨 PLACEHOLDER VALUES DETECTED 🚨');
-  console.error('You are using placeholder values in your .env file.');
-  console.error('Please replace them with your actual Supabase credentials.');
-  console.error('');
+  console.warn('⚠️ Supabase using placeholder values - running in demo mode');
 }
 
 // Only log success if properly configured
