@@ -210,6 +210,12 @@ export function TestProvider({ children }: { children: ReactNode }) {
   React.useEffect(() => {
     const loadData = async () => {
       try {
+        // Check if Supabase is properly configured
+        if (!import.meta.env.VITE_SUPABASE_URL || !import.meta.env.VITE_SUPABASE_ANON_KEY) {
+          console.error('Supabase configuration missing. Please check your .env file.');
+          return;
+        }
+
         // Load exam sets
         const examSets = await ExamService.getExamSets();
         dispatch({ type: 'SET_EXAM_SETS', payload: examSets });
@@ -231,6 +237,16 @@ export function TestProvider({ children }: { children: ReactNode }) {
         dispatch({ type: 'SET_QUESTIONS', payload: formattedQuestions });
       } catch (error) {
         console.error('Error loading exam data:', error);
+        // Fallback to mock data if Supabase fails
+        console.log('Falling back to mock data...');
+        const mockExamSets = [
+          { id: 1, name: 'TCF - Examen Principal', description: 'Examen principal du Test de Connaissance du Français', totalQuestions: 0, isActive: true },
+        ];
+        dispatch({ type: 'SET_EXAM_SETS', payload: mockExamSets });
+        
+        // Load mock questions from existing mock data
+        const { mockQuestions } = await import('../data/mockQuestions');
+        dispatch({ type: 'SET_QUESTIONS', payload: mockQuestions });
       }
     };
 
