@@ -153,10 +153,26 @@ function testReducer(state: TestState, action: TestAction): TestState {
       return { ...state, timeRemaining: newTime };
 
     case 'COMPLETE_TEST':
+      // Calculate which exam was just completed
+      const completedExamId = state.currentExamSet;
+      
+      // Find the next exam to unlock
+      const updatedExamSets = state.examSets.map(examSet => {
+        // If this is the next exam after the completed one, unlock it
+        if (examSet.id === completedExamId + 1) {
+          return { ...examSet, isActive: true };
+        }
+        return examSet;
+      });
+      
+      // Save updated exam sets to localStorage
+      saveToStorage('tcf_exam_sets', updatedExamSets);
+      
       return {
         ...state,
         testCompleted: true,
         currentSection: 'results',
+        examSets: updatedExamSets,
       };
 
     case 'SET_QUESTIONS':
