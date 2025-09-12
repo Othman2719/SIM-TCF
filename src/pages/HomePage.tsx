@@ -58,104 +58,6 @@ const HomePage: React.FC = () => {
             Évaluez votre niveau selon le Cadre Européen Commun de Référence.
           </p>
         </div>
-
-        {/* Exam Selection */}
-        <div className="mb-12 bg-white rounded-xl shadow-md p-8">
-          <h3 className="text-2xl font-bold text-gray-900 mb-8 text-center">Choisir un Examen</h3>
-          <div className="space-y-4 max-w-4xl mx-auto">
-            {state.examSets.map((examSet, index) => {
-              const questionCounts = getExamQuestionCount(examSet.id);
-              const isLocked = !examSet.isActive;
-              const isSelected = selectedExam === examSet.id;
-              
-              return (
-                <div 
-                  key={examSet.id} 
-                  className={`border-2 rounded-lg p-6 cursor-pointer transition-all ${
-                    isSelected && !isLocked
-                      ? 'border-blue-500 bg-blue-50' 
-                      : isLocked 
-                        ? 'border-gray-200 bg-gray-50' 
-                        : 'border-gray-200 hover:border-gray-300'
-                  }`}
-                  onClick={() => !isLocked && setSelectedExam(examSet.id)}
-                >
-                  <div className="flex items-start space-x-4">
-                    {/* Radio Button */}
-                    <div className="flex-shrink-0 mt-1">
-                      <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
-                        isSelected && !isLocked
-                          ? 'border-blue-500 bg-blue-500'
-                          : isLocked
-                            ? 'border-gray-300 bg-gray-100'
-                            : 'border-gray-300'
-                      }`}>
-                        {isSelected && !isLocked && (
-                          <div className="w-2 h-2 bg-white rounded-full"></div>
-                        )}
-                      </div>
-                    </div>
-                    
-                    {/* Content */}
-                    <div className="flex-1">
-                      <div className="flex items-center justify-between mb-2">
-                        <div className="flex items-center space-x-3">
-                          <h4 className={`text-lg font-semibold ${
-                            isLocked ? 'text-gray-400' : 'text-gray-900'
-                          }`}>
-                            {index === 0 ? 'TCF - Examen Principal' : examSet.name}
-                          </h4>
-                          <span className={`text-sm ${
-                            isLocked ? 'text-gray-400' : 'text-blue-600'
-                          }`}>
-                            {questionCounts.total} questions
-                          </span>
-                          {isLocked && (
-                            <div className="flex items-center space-x-1 text-orange-500">
-                              <Lock className="w-4 h-4" />
-                              <span className="text-sm font-medium">Verrouillé</span>
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                      
-                      <p className={`text-sm mb-3 ${
-                        isLocked ? 'text-gray-400' : 'text-gray-600'
-                      }`}>
-                        {index === 0 
-                          ? 'Examen principal du Test de Connaissance du Français avec questions de tous niveaux'
-                          : examSet.description
-                        }
-                      </p>
-                      
-                      {isLocked && (
-                        <p className="text-sm text-orange-600 font-medium">
-                          Terminez l'examen précédent pour débloquer celui-ci
-                        </p>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-          
-          {/* Start Button */}
-          <div className="text-center mt-8">
-            <button
-              onClick={() => handleStartTest()}
-              disabled={!state.examSets.find(e => e.id === selectedExam)?.isActive}
-              className={`px-8 py-3 rounded-lg font-semibold transition-colors flex items-center justify-center space-x-2 mx-auto ${
-                state.examSets.find(e => e.id === selectedExam)?.isActive
-                  ? 'bg-blue-600 hover:bg-blue-700 text-white'
-                  : 'bg-gray-300 text-gray-500 cursor-not-allowed'
-              }`}
-            >
-              <span>Commencer l'Examen</span>
-              <ChevronRight className="w-4 h-4" />
-            </button>
-          </div>
-        </div>
         {/* Test Info Cards */}
         <div className="grid md:grid-cols-3 gap-6 mb-12">
           <div className="bg-white rounded-xl p-6 shadow-md border border-blue-100">
@@ -261,6 +163,104 @@ const HomePage: React.FC = () => {
                 </li>
               </ul>
             </div>
+          </div>
+        </div>
+
+        {/* Exam Selection */}
+        <div className="mb-12 bg-white rounded-xl shadow-md p-8">
+          <h3 className="text-2xl font-bold text-gray-900 mb-8 text-center">Choisir un Examen</h3>
+          <div className="space-y-4 max-w-4xl mx-auto">
+            {state.examSets.map((examSet, index) => {
+              const questionCounts = getExamQuestionCount(examSet.id);
+              const isLocked = !examSet.isActive;
+              const isSelected = selectedExam === examSet.id;
+              
+              return (
+                <div 
+                  key={examSet.id} 
+                  className={`border-2 rounded-lg p-6 cursor-pointer transition-all ${
+                    isSelected && !isLocked
+                      ? 'border-blue-500 bg-blue-50' 
+                      : isLocked 
+                        ? 'border-gray-200 bg-gray-50' 
+                        : 'border-gray-200 hover:border-gray-300'
+                  }`}
+                  onClick={() => !isLocked && setSelectedExam(examSet.id)}
+                >
+                  <div className="flex items-start space-x-4">
+                    {/* Radio Button */}
+                    <div className="flex-shrink-0 mt-1">
+                      <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
+                        isSelected && !isLocked
+                          ? 'border-blue-500 bg-blue-500'
+                          : isLocked
+                            ? 'border-gray-300 bg-gray-100'
+                            : 'border-gray-300'
+                      }`}>
+                        {isSelected && !isLocked && (
+                          <div className="w-2 h-2 bg-white rounded-full"></div>
+                        )}
+                      </div>
+                    </div>
+                    
+                    {/* Content */}
+                    <div className="flex-1">
+                      <div className="flex items-center justify-between mb-2">
+                        <div className="flex items-center space-x-3">
+                          <h4 className={`text-lg font-semibold ${
+                            isLocked ? 'text-gray-400' : 'text-gray-900'
+                          }`}>
+                            {index === 0 ? 'TCF - Examen Principal' : examSet.name}
+                          </h4>
+                          <span className={`text-sm ${
+                            isLocked ? 'text-gray-400' : 'text-blue-600'
+                          }`}>
+                            {questionCounts.total} questions
+                          </span>
+                          {isLocked && (
+                            <div className="flex items-center space-x-1 text-orange-500">
+                              <Lock className="w-4 h-4" />
+                              <span className="text-sm font-medium">Verrouillé</span>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                      
+                      <p className={`text-sm mb-3 ${
+                        isLocked ? 'text-gray-400' : 'text-gray-600'
+                      }`}>
+                        {index === 0 
+                          ? 'Examen principal du Test de Connaissance du Français avec questions de tous niveaux'
+                          : examSet.description
+                        }
+                      </p>
+                      
+                      {isLocked && (
+                        <p className="text-sm text-orange-600 font-medium">
+                          Terminez l'examen précédent pour débloquer celui-ci
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+          
+          {/* Start Button */}
+          <div className="text-center mt-8">
+            <button
+              onClick={() => handleStartTest()}
+              disabled={!state.examSets.find(e => e.id === selectedExam)?.isActive}
+              className={`px-8 py-3 rounded-lg font-semibold transition-colors flex items-center justify-center space-x-2 mx-auto ${
+                state.examSets.find(e => e.id === selectedExam)?.isActive
+                  ? 'bg-blue-600 hover:bg-blue-700 text-white'
+                  : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+              }`}
+            >
+              <span>Commencer l'Examen</span>
+              <ChevronRight className="w-4 h-4" />
+            </button>
           </div>
         </div>
 
