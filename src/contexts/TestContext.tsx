@@ -452,6 +452,28 @@ export function TestProvider({ children }: { children: ReactNode }) {
 
   // Create new exam set
   const createExamSet = async (examSetData: Omit<ExamSet, 'id' | 'createdAt' | 'updatedAt'>) => {
+    if (!isSupabaseConfigured()) {
+      console.warn('⚠️ Supabase not configured. Creating exam set locally.');
+      
+      // Create exam set locally
+      const newExamSet: ExamSet = {
+        id: Math.max(...state.examSets.map(e => e.id), 0) + 1,
+        name: examSetData.name,
+        description: examSetData.description,
+        totalQuestions: 0,
+        isActive: examSetData.isActive,
+        isPremium: examSetData.isPremium || false,
+        difficultyLevel: examSetData.difficultyLevel || 'mixed',
+        timeLimitMinutes: examSetData.timeLimitMinutes || 90,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      };
+      
+      dispatch({ type: 'SET_EXAM_SETS', payload: [...state.examSets, newExamSet] });
+      console.log('Exam set created locally:', newExamSet);
+      return;
+    }
+
     try {
       const { data: userData } = await supabase.auth.getUser();
       
@@ -481,6 +503,29 @@ export function TestProvider({ children }: { children: ReactNode }) {
 
   // Create new question
   const createQuestion = async (questionData: Omit<Question, 'id' | 'createdAt' | 'updatedAt'>) => {
+    if (!isSupabaseConfigured()) {
+      console.warn('⚠️ Supabase not configured. Creating question locally.');
+      
+      // Create question locally
+      const newQuestion: Question = {
+        id: 'local_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9),
+        section: questionData.section,
+        examSet: questionData.examSet,
+        questionText: questionData.questionText,
+        options: questionData.options,
+        correctAnswer: questionData.correctAnswer,
+        level: questionData.level,
+        audioUrl: questionData.audioUrl,
+        imageUrl: questionData.imageUrl,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      };
+      
+      dispatch({ type: 'SET_QUESTIONS', payload: [...state.questions, newQuestion] });
+      console.log('Question created locally:', newQuestion);
+      return;
+    }
+
     try {
       const { data: userData } = await supabase.auth.getUser();
       
@@ -511,6 +556,25 @@ export function TestProvider({ children }: { children: ReactNode }) {
 
   // Update exam set
   const updateExamSet = async (id: number, updates: Partial<ExamSet>) => {
+    if (!isSupabaseConfigured()) {
+      console.warn('⚠️ Supabase not configured. Updating exam set locally.');
+      
+      // Update exam set locally
+      const updatedExamSets = state.examSets.map(examSet => 
+        examSet.id === id 
+          ? { 
+              ...examSet, 
+              ...updates,
+              updatedAt: new Date().toISOString()
+            }
+          : examSet
+      );
+      
+      dispatch({ type: 'SET_EXAM_SETS', payload: updatedExamSets });
+      console.log('Exam set updated locally:', id);
+      return;
+    }
+
     try {
       const { data, error } = await supabase
         .from('exam_sets')
@@ -537,6 +601,25 @@ export function TestProvider({ children }: { children: ReactNode }) {
 
   // Update question
   const updateQuestion = async (id: string, updates: Partial<Question>) => {
+    if (!isSupabaseConfigured()) {
+      console.warn('⚠️ Supabase not configured. Updating question locally.');
+      
+      // Update question locally
+      const updatedQuestions = state.questions.map(question => 
+        question.id === id 
+          ? { 
+              ...question, 
+              ...updates,
+              updatedAt: new Date().toISOString()
+            }
+          : question
+      );
+      
+      dispatch({ type: 'SET_QUESTIONS', payload: updatedQuestions });
+      console.log('Question updated locally:', id);
+      return;
+    }
+
     try {
       const { data, error } = await supabase
         .from('questions')
@@ -565,6 +648,19 @@ export function TestProvider({ children }: { children: ReactNode }) {
 
   // Delete exam set
   const deleteExamSet = async (id: number) => {
+    if (!isSupabaseConfigured()) {
+      console.warn('⚠️ Supabase not configured. Deleting exam set locally.');
+      
+      // Delete exam set locally
+      const filteredExamSets = state.examSets.filter(examSet => examSet.id !== id);
+      const filteredQuestions = state.questions.filter(question => question.examSet !== id);
+      
+      dispatch({ type: 'SET_EXAM_SETS', payload: filteredExamSets });
+      dispatch({ type: 'SET_QUESTIONS', payload: filteredQuestions });
+      console.log('Exam set deleted locally:', id);
+      return;
+    }
+
     try {
       const { error } = await supabase
         .from('exam_sets')
@@ -582,6 +678,17 @@ export function TestProvider({ children }: { children: ReactNode }) {
 
   // Delete question
   const deleteQuestion = async (id: string) => {
+    if (!isSupabaseConfigured()) {
+      console.warn('⚠️ Supabase not configured. Deleting question locally.');
+      
+      // Delete question locally
+      const filteredQuestions = state.questions.filter(question => question.id !== id);
+      
+      dispatch({ type: 'SET_QUESTIONS', payload: filteredQuestions });
+      console.log('Question deleted locally:', id);
+      return;
+    }
+
     try {
       const { error } = await supabase
         .from('questions')
