@@ -10,24 +10,45 @@ const LoginPage: React.FC = () => {
     email: '',
     password: '',
   });
-  const [error, setError] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Redirect if already authenticated
+  React.useEffect(() => {
+    if (state.isAuthenticated && state.currentUser) {
+      if (state.currentUser.role === 'admin') {
+        navigate('/admin');
+      } else {
+        navigate('/');
+      }
+    }
+  }, [state.isAuthenticated, state.currentUser, navigate]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError('');
-
+    
     if (!formData.email || !formData.password) {
-      setError('Veuillez remplir tous les champs');
       return;
     }
 
-    const result = await signIn(formData.email, formData.password);
-    
-    if (result.success) {
-      // Navigation will be handled by the auth state change
-      // Don't navigate immediately
-    } else {
-      setError(result.error || 'Email ou mot de passe incorrect');
+    if (isSubmitting) {
+      return; // Prevent double submission
+    }
+
+    setIsSubmitting(true);
+
+    try {
+      console.log('Submitting login form...');
+      const result = await signIn(formData.email, formData.password);
+      console.log('Login result:', result);
+      
+      if (!result.success) {
+        console.error('Login failed:', result.error);
+      }
+      // Success case is handled by the auth context navigation
+    } catch (error) {
+      console.error('Login error:', error);
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -37,6 +58,18 @@ const LoginPage: React.FC = () => {
       [e.target.name]: e.target.value,
     });
   };
+
+  // Show loading screen while checking initial auth state
+  if (state.isLoading && !isSubmitting) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-lg text-gray-600">Chargement...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
@@ -51,11 +84,11 @@ const LoginPage: React.FC = () => {
         </div>
 
         {/* Error Message */}
-        {error && (
+        {state.error && (
           <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
             <div className="flex items-center space-x-2">
               <AlertCircle className="w-5 h-5 text-red-600" />
-              <p className="text-red-700 text-sm">{error}</p>
+              <p className="text-red-700 text-sm">{state.error}</p>
             </div>
           </div>
         )}
@@ -75,7 +108,8 @@ const LoginPage: React.FC = () => {
                 onChange={handleChange}
                 className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 placeholder="Entrez votre email"
-                disabled={state.isLoading}
+                disabled={isSubmitting}
+                required
               />
             </div>
           </div>
@@ -93,17 +127,18 @@ const LoginPage: React.FC = () => {
                 onChange={handleChange}
                 className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 placeholder="Entrez votre mot de passe"
-                disabled={state.isLoading}
+                disabled={isSubmitting}
+                required
               />
             </div>
           </div>
 
           <button
             type="submit"
-            disabled={state.isLoading}
+            disabled={isSubmitting || !formData.email || !formData.password}
             className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white font-semibold py-3 px-4 rounded-lg transition-colors flex items-center justify-center space-x-2"
           >
-            {state.isLoading ? (
+            {isSubmitting ? (
               <>
                 <Loader className="w-5 h-5 animate-spin" />
                 <span>Connexion...</span>
@@ -114,7 +149,12 @@ const LoginPage: React.FC = () => {
           </button>
         </form>
 
-        {/* Registration Link */}
+        {/* Test Credentials */}
+        <div className="mt-8 p-4 bg-gray-50 rounded-lg">
+          <p className="text-sm text-gray-600 mb-2">Compte de test :</p>
+          <p className="text-xs text-gray-500">Email: tcfadmin@brixel.com</p>
+          <p className="text-xs text-gray-500">Mot de passe: Mostaganem@27</p>
+        </div>
       </div>
     </div>
   );
