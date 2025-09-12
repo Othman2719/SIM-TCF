@@ -25,7 +25,7 @@ export interface Database {
           email: string;
           username: string;
           full_name: string;
-          role: 'admin' | 'client';
+          role: 'super_admin' | 'admin' | 'client';
           is_active: boolean;
           subscription_type: 'free' | 'premium' | 'enterprise';
           subscription_expires_at: string | null;
@@ -37,7 +37,7 @@ export interface Database {
           email: string;
           username: string;
           full_name?: string;
-          role?: 'admin' | 'client';
+          role?: 'super_admin' | 'admin' | 'client';
           is_active?: boolean;
           subscription_type?: 'free' | 'premium' | 'enterprise';
           subscription_expires_at?: string | null;
@@ -49,7 +49,7 @@ export interface Database {
           email?: string;
           username?: string;
           full_name?: string;
-          role?: 'admin' | 'client';
+          role?: 'super_admin' | 'admin' | 'client';
           is_active?: boolean;
           subscription_type?: 'free' | 'premium' | 'enterprise';
           subscription_expires_at?: string | null;

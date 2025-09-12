@@ -167,9 +167,19 @@ const LoginPage: React.FC = () => {
 
         {/* Test Credentials */}
         <div className="mt-8 p-4 bg-gray-50 rounded-lg">
-          <p className="text-sm text-gray-600 mb-2">Compte de test :</p>
-          <p className="text-xs text-gray-500">Email: tcfadmin@brixel.com</p>
-          <p className="text-xs text-gray-500">Mot de passe: Mostaganem@27</p>
+          <p className="text-sm text-gray-600 mb-2">Comptes de test :</p>
+          <div className="space-y-2">
+            <div>
+              <p className="text-xs font-medium text-purple-600">Super Admin (Owner):</p>
+              <p className="text-xs text-gray-500">Email: owner@brixel.com</p>
+              <p className="text-xs text-gray-500">Mot de passe: BrixelOwner@2024</p>
+            </div>
+            <div>
+              <p className="text-xs font-medium text-blue-600">Admin:</p>
+              <p className="text-xs text-gray-500">Email: tcfadmin@brixel.com</p>
+              <p className="text-xs text-gray-500">Mot de passe: Mostaganem@27</p>
+            </div>
+          </div>
         </div>
       </div>
     </div>

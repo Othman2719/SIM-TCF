@@ -17,7 +17,7 @@ const UserManagement: React.FC = () => {
     full_name: '',
     email: '',
     password: '',
-    role: 'client' as 'admin' | 'client',
+    role: 'client' as 'super_admin' | 'admin' | 'client',
     is_active: true,
   });
 
@@ -342,11 +342,16 @@ const UserManagement: React.FC = () => {
                 </label>
                 <select
                   value={formData.role}
-                  onChange={(e) => setFormData({ ...formData, role: e.target.value as 'admin' | 'client' })}
+                 onChange={(e) => setFormData({ ...formData, role: e.target.value as 'super_admin' | 'admin' | 'client' })}
                   className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 >
                   <option value="client">Client</option>
-                  <option value="admin">Administrateur</option>
+                  {authState.currentUser?.role === 'super_admin' && (
+                    <option value="admin">Administrateur</option>
+                  )}
+                  {authState.currentUser?.role === 'super_admin' && (
+                    <option value="super_admin">Super Administrateur</option>
+                  )}
                 </select>
               </div>
             </div>
@@ -444,11 +449,13 @@ const UserManagement: React.FC = () => {
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                      user.role === 'admin'
+                      user.role === 'super_admin'
+                        ? 'bg-purple-100 text-purple-800'
+                        : user.role === 'admin'
                         ? 'bg-purple-100 text-purple-800'
                         : 'bg-green-100 text-green-800'
                     }`}>
-                      {user.role === 'admin' ? 'Administrateur' : 'Client'}
+                      {user.role === 'super_admin' ? 'Super Admin' : user.role === 'admin' ? 'Administrateur' : 'Client'}
                     </span>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">

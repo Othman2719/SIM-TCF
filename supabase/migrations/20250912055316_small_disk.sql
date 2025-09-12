@@ -1,0 +1,107 @@
+/*
+  # Add Super Admin Role and Owner Account
+
+  1. New Role Type
+    - Add 'super_admin' to user_role enum
+    - Super admin can manage all users including admins
+
+  2. Owner Account
+    - Create owner account with super_admin role
+    - Owner can create and manage admin accounts
+
+  3. Security
+    - Update RLS policies for super admin access
+*/
+
+-- Add super_admin to the user_role enum
+ALTER TYPE user_role ADD VALUE IF NOT EXISTS 'super_admin';
+
+-- Create or update the owner account
+INSERT INTO users (
+  id,
+  email,
+  username,
+  full_name,
+  role,
+  is_active,
+  subscription_type,
+  created_at,
+  updated_at
+) VALUES (
+  '00000000-0000-0000-0000-000000000001',
+  'owner@brixel.com',
+  'brixel_owner',
+  'Brixel Owner',
+  'super_admin',
+  true,
+  'enterprise',
+  now(),
+  now()
+) ON CONFLICT (email) DO UPDATE SET
+  role = 'super_admin',
+  is_active = true,
+  subscription_type = 'enterprise',
+  updated_at = now();
+
+-- Update RLS policies to allow super_admin access
+DROP POLICY IF EXISTS "Super admin can manage all users" ON users;
+CREATE POLICY "Super admin can manage all users"
+  ON users
+  FOR ALL
+  TO authenticated
+  USING (
+    EXISTS (
+      SELECT 1 FROM users 
+      WHERE id = auth.uid() 
+      AND role = 'super_admin'
+    )
+  )
+  WITH CHECK (
+    EXISTS (
+      SELECT 1 FROM users 
+      WHERE id = auth.uid() 
+      AND role = 'super_admin'
+    )
+  );
+
+-- Allow super_admin to manage exam sets
+DROP POLICY IF EXISTS "Super admin can manage exam sets" ON exam_sets;
+CREATE POLICY "Super admin can manage exam sets"
+  ON exam_sets
+  FOR ALL
+  TO authenticated
+  USING (
+    EXISTS (
+      SELECT 1 FROM users 
+      WHERE id = auth.uid() 
+      AND role IN ('super_admin', 'admin')
+    )
+  )
+  WITH CHECK (
+    EXISTS (
+      SELECT 1 FROM users 
+      WHERE id = auth.uid() 
+      AND role IN ('super_admin', 'admin')
+    )
+  );
+
+-- Allow super_admin to manage questions
+DROP POLICY IF EXISTS "Super admin can manage questions" ON questions;
+CREATE POLICY "Super admin can manage questions"
+  ON questions
+  FOR ALL
+  TO authenticated
+  USING (
+    EXISTS (
+      SELECT 1 FROM users 
+      WHERE id = auth.uid() 
+      AND role IN ('super_admin', 'admin')
+    )
+  )
+  WITH CHECK (
+    EXISTS (
+      SELECT 1 FROM users 
+      WHERE id = auth.uid() 
+      AND role IN ('super_admin', 'admin')
+    )
+  );

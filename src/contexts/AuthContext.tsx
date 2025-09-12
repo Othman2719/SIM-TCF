@@ -7,7 +7,7 @@ export interface User {
   email: string;
   username: string;
   full_name: string;
-  role: 'admin' | 'client';
+  role: 'super_admin' | 'admin' | 'client';
   is_active: boolean;
   subscription_type: 'free' | 'premium' | 'enterprise';
   subscription_expires_at: string | null;
@@ -60,6 +60,7 @@ const AuthContext = createContext<{
   state: AuthState;
   signIn: (email: string, password: string) => Promise<{ success: boolean; error?: string }>;
   signUp: (email: string, password: string, userData: { username: string; full_name: string; role?: 'admin' | 'client' }) => Promise<{ success: boolean; error?: string }>;
+  signUp: (email: string, password: string, userData: { username: string; full_name: string; role?: 'super_admin' | 'admin' | 'client' }) => Promise<{ success: boolean; error?: string }>;
   logout: () => Promise<void>;
   updateProfile: (updates: Partial<User>) => Promise<{ success: boolean; error?: string }>;
 } | undefined>(undefined);
@@ -125,7 +126,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (state.currentUser && !state.isLoading && state.isAuthenticated) {
       console.log('User authenticated, navigating...', state.currentUser.role);
-      if (state.currentUser.role === 'admin') {
+      if (state.currentUser.role === 'super_admin' || state.currentUser.role === 'admin') {
         console.log('Redirecting admin to /admin');
         navigate('/admin');
       } else {
