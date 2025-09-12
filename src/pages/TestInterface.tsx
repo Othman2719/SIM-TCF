@@ -37,7 +37,9 @@ const TestInterface: React.FC = () => {
   }, [state.testStarted, state.testCompleted, dispatch, navigate]);
 
   const getSectionQuestions = () => {
-    return state.questions.filter(q => q.section === state.currentSection);
+    return state.questions.filter(q => 
+      q.section === state.currentSection && q.examSet === state.currentExamSet
+    );
   };
 
   const getSectionIcon = () => {

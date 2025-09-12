@@ -11,6 +11,14 @@ export interface Question {
   level: 'A1' | 'A2' | 'B1' | 'B2' | 'C1' | 'C2';
 }
 
+export interface ExamSet {
+  id: number;
+  name: string;
+  description: string;
+  totalQuestions: number;
+  isActive: boolean;
+}
+
 export interface TestState {
   currentSection: 'home' | 'listening' | 'grammar' | 'reading' | 'results';
   currentQuestionIndex: number;
@@ -23,10 +31,12 @@ export interface TestState {
   audioPlayed: Record<string, boolean>;
   score: number;
   level: string;
+  examSets: ExamSet[];
+  selectedExamSet: number | null;
 }
 
 type TestAction =
-  | { type: 'START_TEST' }
+  | { type: 'START_TEST'; payload?: number }
   | { type: 'SET_SECTION'; payload: TestState['currentSection'] }
   | { type: 'NEXT_QUESTION' }
   | { type: 'PREV_QUESTION' }
@@ -36,7 +46,9 @@ type TestAction =
   | { type: 'SET_QUESTIONS'; payload: Question[] }
   | { type: 'MARK_AUDIO_PLAYED'; payload: string }
   | { type: 'CALCULATE_SCORE' }
-  | { type: 'RESET_TEST' };
+  | { type: 'RESET_TEST' }
+  | { type: 'SET_EXAM_SETS'; payload: ExamSet[] }
+  | { type: 'SELECT_EXAM_SET'; payload: number };
 
 const initialState: TestState = {
   currentSection: 'home',
@@ -50,16 +62,24 @@ const initialState: TestState = {
   audioPlayed: {},
   score: 0,
   level: 'A1',
+  examSets: [
+    { id: 1, name: 'Examen 1', description: 'Premier examen d\'entraînement', totalQuestions: 70, isActive: true },
+    { id: 2, name: 'Examen 2', description: 'Deuxième examen d\'entraînement', totalQuestions: 70, isActive: true },
+    { id: 3, name: 'Examen 3', description: 'Troisième examen d\'entraînement', totalQuestions: 70, isActive: true },
+  ],
+  selectedExamSet: null,
 };
 
 function testReducer(state: TestState, action: TestAction): TestState {
   switch (action.type) {
     case 'START_TEST':
+      const examSetId = action.payload || state.selectedExamSet || 1;
       return {
         ...state,
         testStarted: true,
         currentSection: 'listening',
         currentQuestionIndex: 0,
+        currentExamSet: examSetId,
       };
 
     case 'SET_SECTION':
@@ -120,10 +140,11 @@ function testReducer(state: TestState, action: TestAction): TestState {
       };
 
     case 'CALCULATE_SCORE':
-      const correctAnswers = state.questions.filter(
+      const currentExamQuestions = state.questions.filter(q => q.examSet === state.currentExamSet);
+      const correctAnswers = currentExamQuestions.filter(
         (q) => state.answers[q.id] === q.correctAnswer
       ).length;
-      const totalQuestions = state.questions.length;
+      const totalQuestions = currentExamQuestions.length;
       const scorePercentage = (correctAnswers / totalQuestions) * 100;
       const finalScore = Math.round((scorePercentage / 100) * 699);
       
@@ -144,6 +165,21 @@ function testReducer(state: TestState, action: TestAction): TestState {
       return {
         ...initialState,
         questions: state.questions,
+        examSets: state.examSets,
+        selectedExamSet: null,
+      };
+
+    case 'SET_EXAM_SETS':
+      return {
+        ...state,
+        examSets: action.payload,
+      };
+
+    case 'SELECT_EXAM_SET':
+      return {
+        ...state,
+        selectedExamSet: action.payload,
+        currentExamSet: action.payload,
       };
 
     default:

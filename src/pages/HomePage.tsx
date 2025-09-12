@@ -1,17 +1,27 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTest } from '../contexts/TestContext';
-import { BookOpen, Clock, Headphones, PenTool, FileText, Target } from 'lucide-react';
+import { BookOpen, Clock, Headphones, PenTool, FileText, Target, ChevronRight } from 'lucide-react';
 
 const HomePage: React.FC = () => {
   const navigate = useNavigate();
   const { dispatch } = useTest();
 
-  const handleStartTest = () => {
-    dispatch({ type: 'START_TEST' });
+  const handleStartTest = (examSetId?: number) => {
+    if (examSetId) {
+      dispatch({ type: 'SELECT_EXAM_SET', payload: examSetId });
+    }
+    dispatch({ type: 'START_TEST', payload: examSetId });
     navigate('/test');
   };
 
+  const getExamQuestionCount = (examSetId: number) => {
+    const examQuestions = state.questions.filter(q => q.examSet === examSetId);
+    const listening = examQuestions.filter(q => q.section === 'listening').length;
+    const grammar = examQuestions.filter(q => q.section === 'grammar').length;
+    const reading = examQuestions.filter(q => q.section === 'reading').length;
+    return { listening, grammar, reading, total: examQuestions.length };
+  };
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
       {/* Header */}
@@ -49,6 +59,52 @@ const HomePage: React.FC = () => {
           </p>
         </div>
 
+        {/* Exam Selection */}
+        <div className="mb-12">
+          <h3 className="text-2xl font-bold text-gray-900 mb-6 text-center">Choisissez votre examen</h3>
+          <div className="grid md:grid-cols-3 gap-6">
+            {state.examSets.filter(exam => exam.isActive).map((examSet) => {
+              const questionCounts = getExamQuestionCount(examSet.id);
+              return (
+                <div key={examSet.id} className="bg-white rounded-xl p-6 shadow-md border border-blue-100 hover:shadow-lg transition-shadow">
+                  <div className="text-center mb-4">
+                    <h4 className="text-xl font-bold text-gray-900 mb-2">{examSet.name}</h4>
+                    <p className="text-gray-600 text-sm mb-4">{examSet.description}</p>
+                  </div>
+                  
+                  <div className="space-y-2 mb-6">
+                    <div className="flex justify-between text-sm">
+                      <span className="text-gray-600">Compréhension Orale:</span>
+                      <span className="font-medium">{questionCounts.listening} questions</span>
+                    </div>
+                    <div className="flex justify-between text-sm">
+                      <span className="text-gray-600">Structures de la Langue:</span>
+                      <span className="font-medium">{questionCounts.grammar} questions</span>
+                    </div>
+                    <div className="flex justify-between text-sm">
+                      <span className="text-gray-600">Compréhension Écrite:</span>
+                      <span className="font-medium">{questionCounts.reading} questions</span>
+                    </div>
+                    <div className="border-t pt-2 mt-2">
+                      <div className="flex justify-between text-sm font-semibold">
+                        <span className="text-gray-900">Total:</span>
+                        <span className="text-blue-600">{questionCounts.total} questions</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <button
+                    onClick={() => handleStartTest(examSet.id)}
+                    className="w-full bg-blue-600 hover:bg-blue-700 text-white px-4 py-3 rounded-lg font-semibold transition-colors flex items-center justify-center space-x-2"
+                  >
+                    <span>Commencer {examSet.name}</span>
+                    <ChevronRight className="w-4 h-4" />
+                  </button>
+                </div>
+              );
+            })}
+          </div>
+        </div>
         {/* Test Info Cards */}
         <div className="grid md:grid-cols-3 gap-6 mb-12">
           <div className="bg-white rounded-xl p-6 shadow-md border border-blue-100">
@@ -157,17 +213,17 @@ const HomePage: React.FC = () => {
           </div>
         </div>
 
-        {/* Start Button */}
+        {/* Quick Start */}
         <div className="text-center">
-          <button
-            onClick={handleStartTest}
-            className="bg-blue-600 hover:bg-blue-700 text-white px-12 py-4 rounded-xl text-lg font-semibold transition-all transform hover:scale-105 shadow-lg hover:shadow-xl"
-          >
-            Commencer le Test
-          </button>
-          <p className="text-sm text-gray-500 mt-4">
-            Assurez-vous d'avoir 90 minutes disponibles avant de commencer
+          <p className="text-lg text-gray-600 mb-4">
+            Ou commencez rapidement avec l'examen par défaut
           </p>
+          <button
+            onClick={() => handleStartTest(1)}
+            className="bg-gray-600 hover:bg-gray-700 text-white px-8 py-3 rounded-lg font-semibold transition-colors"
+          >
+            Démarrage Rapide - Examen 1
+          </button>
         </div>
       </main>
     </div>

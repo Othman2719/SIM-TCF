@@ -217,5 +217,199 @@ export const mockQuestions: Question[] = [
     ],
     correctAnswer: 2,
     level: 'C1'
+  },
+
+  // Exam 2 Questions - Listening
+  {
+    id: 'listening_2_1',
+    section: 'listening',
+    examSet: 2,
+    questionText: 'Dans cet enregistrement, que demande la personne?',
+    options: [
+      'Des informations sur les horaires',
+      'Le prix d\'un billet',
+      'La direction à suivre',
+      'L\'heure actuelle'
+    ],
+    correctAnswer: 2,
+    level: 'A1'
+  },
+  {
+    id: 'listening_2_2',
+    section: 'listening',
+    examSet: 2,
+    questionText: 'Quelle est la météo annoncée pour demain?',
+    options: [
+      'Ensoleillé',
+      'Pluvieux',
+      'Nuageux',
+      'Orageux'
+    ],
+    correctAnswer: 1,
+    level: 'A2'
+  },
+  {
+    id: 'listening_2_3',
+    section: 'listening',
+    examSet: 2,
+    questionText: 'Selon le journaliste, quel est le principal défi?',
+    options: [
+      'Le financement du projet',
+      'L\'acceptation du public',
+      'Les contraintes techniques',
+      'Les délais de réalisation'
+    ],
+    correctAnswer: 0,
+    level: 'B1'
+  },
+
+  // Exam 2 Questions - Grammar
+  {
+    id: 'grammar_2_1',
+    section: 'grammar',
+    examSet: 2,
+    questionText: 'Complétez: "Elle _____ ses devoirs avant de sortir."',
+    options: [
+      'finit',
+      'a fini',
+      'finira',
+      'finissait'
+    ],
+    correctAnswer: 1,
+    level: 'A1'
+  },
+  {
+    id: 'grammar_2_2',
+    section: 'grammar',
+    examSet: 2,
+    questionText: 'Choisissez la bonne préposition: "Il habite _____ Paris."',
+    options: [
+      'dans',
+      'à',
+      'en',
+      'sur'
+    ],
+    correctAnswer: 1,
+    level: 'A2'
+  },
+
+  // Exam 2 Questions - Reading
+  {
+    id: 'reading_2_1',
+    section: 'reading',
+    examSet: 2,
+    questionText: 'Ce texte est principalement:',
+    options: [
+      'Une publicité',
+      'Un mode d\'emploi',
+      'Un article de journal',
+      'Une lettre personnelle'
+    ],
+    correctAnswer: 2,
+    level: 'A1'
+  },
+  {
+    id: 'reading_2_2',
+    section: 'reading',
+    examSet: 2,
+    questionText: 'L\'auteur exprime:',
+    options: [
+      'Son inquiétude',
+      'Sa satisfaction',
+      'Son indifférence',
+      'Sa colère'
+    ],
+    correctAnswer: 0,
+    level: 'B1'
+  },
+
+  // Exam 3 Questions - Listening
+  {
+    id: 'listening_3_1',
+    section: 'listening',
+    examSet: 3,
+    questionText: 'Le rendez-vous est fixé à:',
+    options: [
+      '9h00',
+      '9h30',
+      '10h00',
+      '10h30'
+    ],
+    correctAnswer: 1,
+    level: 'A1'
+  },
+  {
+    id: 'listening_3_2',
+    section: 'listening',
+    examSet: 3,
+    questionText: 'La personne exprime:',
+    options: [
+      'Sa joie',
+      'Sa déception',
+      'Sa surprise',
+      'Sa peur'
+    ],
+    correctAnswer: 2,
+    level: 'A2'
+  },
+
+  // Exam 3 Questions - Grammar
+  {
+    id: 'grammar_3_1',
+    section: 'grammar',
+    examSet: 3,
+    questionText: 'Accordez correctement: "Les fleurs que j\'ai _____"',
+    options: [
+      'acheté',
+      'achetés',
+      'achetée',
+      'achetées'
+    ],
+    correctAnswer: 3,
+    level: 'A2'
+  },
+  {
+    id: 'grammar_3_2',
+    section: 'grammar',
+    examSet: 3,
+    questionText: 'Conjuguez au subjonctif: "Il faut que tu _____"',
+    options: [
+      'viens',
+      'viennes',
+      'viendras',
+      'venais'
+    ],
+    correctAnswer: 1,
+    level: 'B1'
+  },
+
+  // Exam 3 Questions - Reading
+  {
+    id: 'reading_3_1',
+    section: 'reading',
+    examSet: 3,
+    questionText: 'Le ton de ce passage est:',
+    options: [
+      'Humoristique',
+      'Dramatique',
+      'Informatif',
+      'Poétique'
+    ],
+    correctAnswer: 2,
+    level: 'A2'
+  },
+  {
+    id: 'reading_3_2',
+    section: 'reading',
+    examSet: 3,
+    questionText: 'L\'idée principale du texte est:',
+    options: [
+      'La protection de l\'environnement',
+      'Le développement économique',
+      'L\'éducation des jeunes',
+      'La santé publique'
+    ],
+    correctAnswer: 0,
+    level: 'B1'
   }
 ];

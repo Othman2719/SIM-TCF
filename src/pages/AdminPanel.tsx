@@ -1,15 +1,18 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTest } from '../contexts/TestContext';
-import { Plus, Edit2, Trash2, Upload, Home, Save } from 'lucide-react';
-import { Question } from '../contexts/TestContext';
+import { Plus, Edit2, Trash2, Upload, Home, Save, FolderPlus, Folder } from 'lucide-react';
+import { Question, ExamSet } from '../contexts/TestContext';
 
 const AdminPanel: React.FC = () => {
   const navigate = useNavigate();
   const { state, dispatch } = useTest();
   const [activeTab, setActiveTab] = useState<'listening' | 'grammar' | 'reading'>('listening');
+  const [selectedExamSet, setSelectedExamSet] = useState<number>(1);
   const [showAddForm, setShowAddForm] = useState(false);
+  const [showExamForm, setShowExamForm] = useState(false);
   const [editingQuestion, setEditingQuestion] = useState<Question | null>(null);
+  const [editingExam, setEditingExam] = useState<ExamSet | null>(null);
   const [formData, setFormData] = useState({
     questionText: '',
     options: ['', '', '', ''],
@@ -17,8 +20,15 @@ const AdminPanel: React.FC = () => {
     level: 'A1' as Question['level'],
     audioFile: null as File | null,
   });
+  const [examFormData, setExamFormData] = useState({
+    name: '',
+    description: '',
+    isActive: true,
+  });
 
-  const sectionQuestions = state.questions.filter(q => q.section === activeTab);
+  const sectionQuestions = state.questions.filter(q => 
+    q.section === activeTab && q.examSet === selectedExamSet
+  );
 
   const handleAddQuestion = () => {
     if (!formData.questionText || formData.options.some(opt => !opt.trim())) {
@@ -29,7 +39,7 @@ const AdminPanel: React.FC = () => {
     const newQuestion: Question = {
       id: `${activeTab}_${Date.now()}`,
       section: activeTab,
-      examSet: 1,
+      examSet: selectedExamSet,
       questionText: formData.questionText,
       options: formData.options,
       correctAnswer: formData.correctAnswer,
@@ -83,6 +93,62 @@ const AdminPanel: React.FC = () => {
     }
   };
 
+  const handleAddExamSet = () => {
+    if (!examFormData.name.trim()) {
+      alert('Veuillez saisir un nom pour l\'examen');
+      return;
+    }
+
+    const newExamSet: ExamSet = {
+      id: Math.max(...state.examSets.map(e => e.id), 0) + 1,
+      name: examFormData.name,
+      description: examFormData.description,
+      totalQuestions: 0,
+      isActive: examFormData.isActive,
+    };
+
+    dispatch({ type: 'SET_EXAM_SETS', payload: [...state.examSets, newExamSet] });
+    resetExamForm();
+    setShowExamForm(false);
+  };
+
+  const handleUpdateExamSet = () => {
+    if (!editingExam) return;
+
+    const updatedExamSets = state.examSets.map(exam =>
+      exam.id === editingExam.id
+        ? { ...exam, name: examFormData.name, description: examFormData.description, isActive: examFormData.isActive }
+        : exam
+    );
+
+    dispatch({ type: 'SET_EXAM_SETS', payload: updatedExamSets });
+    resetExamForm();
+    setShowExamForm(false);
+    setEditingExam(null);
+  };
+
+  const handleEditExamSet = (examSet: ExamSet) => {
+    setEditingExam(examSet);
+    setExamFormData({
+      name: examSet.name,
+      description: examSet.description,
+      isActive: examSet.isActive,
+    });
+    setShowExamForm(true);
+  };
+
+  const handleDeleteExamSet = (examSetId: number) => {
+    if (confirm('Êtes-vous sûr de vouloir supprimer cet examen et toutes ses questions ?')) {
+      const updatedExamSets = state.examSets.filter(e => e.id !== examSetId);
+      const updatedQuestions = state.questions.filter(q => q.examSet !== examSetId);
+      dispatch({ type: 'SET_EXAM_SETS', payload: updatedExamSets });
+      dispatch({ type: 'SET_QUESTIONS', payload: updatedQuestions });
+      if (selectedExamSet === examSetId) {
+        setSelectedExamSet(1);
+      }
+    }
+  };
+
   const resetForm = () => {
     setFormData({
       questionText: '',
@@ -93,6 +159,14 @@ const AdminPanel: React.FC = () => {
     });
   };
 
+  const resetExamForm = () => {
+    setExamFormData({
+      name: '',
+      description: '',
+      isActive: true,
+    });
+  };
+
   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file && file.type.startsWith('audio/')) {
@@ -100,6 +174,12 @@ const AdminPanel: React.FC = () => {
     } else {
       alert('Veuillez sélectionner un fichier audio valide');
     }
+  };
+
+  const getExamQuestionCount = (examSetId: number) => {
+    return {
+      total: state.questions.filter(q => q.examSet === examSetId).length,
+    };
   };
 
   return (
@@ -121,14 +201,155 @@ const AdminPanel: React.FC = () => {
       </header>
 
       <main className="max-w-7xl mx-auto px-6 py-8">
+        {/* Exam Sets Management */}
+        <div className="bg-white rounded-xl shadow-md mb-8">
+          <div className="border-b border-gray-200 p-6">
+            <div className="flex justify-between items-center">
+              <h2 className="text-xl font-semibold text-gray-900">Gestion des Examens</h2>
+              <button
+                onClick={() => setShowExamForm(true)}
+                className="flex items-center space-x-2 bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors"
+              >
+                <FolderPlus className="w-4 h-4" />
+                <span>Nouvel Examen</span>
+              </button>
+            </div>
+          </div>
+
+          {/* Exam Form */}
+          {showExamForm && (
+            <div className="p-6 border-b border-gray-200 bg-gray-50">
+              <h3 className="text-lg font-semibold mb-4 text-gray-900">
+                {editingExam ? 'Modifier l\'examen' : 'Créer un nouvel examen'}
+              </h3>
+              
+              <div className="grid grid-cols-1 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Nom de l'examen
+                  </label>
+                  <input
+                    type="text"
+                    value={examFormData.name}
+                    onChange={(e) => setExamFormData({ ...examFormData, name: e.target.value })}
+                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    placeholder="Ex: Examen 4"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Description
+                  </label>
+                  <textarea
+                    value={examFormData.description}
+                    onChange={(e) => setExamFormData({ ...examFormData, description: e.target.value })}
+                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    rows={2}
+                    placeholder="Description de l'examen..."
+                  />
+                </div>
+
+                <div className="flex items-center space-x-2">
+                  <input
+                    type="checkbox"
+                    id="isActive"
+                    checked={examFormData.isActive}
+                    onChange={(e) => setExamFormData({ ...examFormData, isActive: e.target.checked })}
+                    className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                  />
+                  <label htmlFor="isActive" className="text-sm text-gray-700">
+                    Examen actif (visible aux utilisateurs)
+                  </label>
+                </div>
+
+                <div className="flex space-x-4">
+                  <button
+                    onClick={editingExam ? handleUpdateExamSet : handleAddExamSet}
+                    className="flex items-center space-x-2 bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors"
+                  >
+                    <Save className="w-4 h-4" />
+                    <span>{editingExam ? 'Mettre à jour' : 'Créer'}</span>
+                  </button>
+                  <button
+                    onClick={() => {
+                      setShowExamForm(false);
+                      setEditingExam(null);
+                      resetExamForm();
+                    }}
+                    className="px-6 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+                  >
+                    Annuler
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Exam Sets List */}
+          <div className="p-6">
+            <div className="grid md:grid-cols-3 gap-4">
+              {state.examSets.map((examSet) => {
+                const questionCount = getExamQuestionCount(examSet.id);
+                return (
+                  <div
+                    key={examSet.id}
+                    className={`border-2 rounded-lg p-4 cursor-pointer transition-all ${
+                      selectedExamSet === examSet.id
+                        ? 'border-blue-500 bg-blue-50'
+                        : 'border-gray-200 hover:border-gray-300'
+                    }`}
+                    onClick={() => setSelectedExamSet(examSet.id)}
+                  >
+                    <div className="flex items-center justify-between mb-2">
+                      <div className="flex items-center space-x-2">
+                        <Folder className="w-5 h-5 text-blue-600" />
+                        <h3 className="font-semibold text-gray-900">{examSet.name}</h3>
+                      </div>
+                      <div className="flex space-x-1">
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleEditExamSet(examSet);
+                          }}
+                          className="p-1 text-blue-600 hover:bg-blue-100 rounded"
+                        >
+                          <Edit2 className="w-3 h-3" />
+                        </button>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleDeleteExamSet(examSet.id);
+                          }}
+                          className="p-1 text-red-600 hover:bg-red-100 rounded"
+                        >
+                          <Trash2 className="w-3 h-3" />
+                        </button>
+                      </div>
+                    </div>
+                    <p className="text-sm text-gray-600 mb-2">{examSet.description}</p>
+                    <div className="flex justify-between items-center text-xs">
+                      <span className="text-gray-500">{questionCount.total} questions</span>
+                      <span className={`px-2 py-1 rounded-full ${
+                        examSet.isActive ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'
+                      }`}>
+                        {examSet.isActive ? 'Actif' : 'Inactif'}
+                      </span>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </div>
         {/* Tab Navigation */}
         <div className="bg-white rounded-xl shadow-md mb-8">
           <div className="border-b border-gray-200">
             <nav className="-mb-px flex space-x-8 px-6">
               {[
-                { key: 'listening', label: 'Compréhension Orale', count: state.questions.filter(q => q.section === 'listening').length },
-                { key: 'grammar', label: 'Structures de la Langue', count: state.questions.filter(q => q.section === 'grammar').length },
-                { key: 'reading', label: 'Compréhension Écrite', count: state.questions.filter(q => q.section === 'reading').length },
+                { key: 'listening', label: 'Compréhension Orale', count: state.questions.filter(q => q.section === 'listening' && q.examSet === selectedExamSet).length },
+                { key: 'grammar', label: 'Structures de la Langue', count: state.questions.filter(q => q.section === 'grammar' && q.examSet === selectedExamSet).length },
+                { key: 'reading', label: 'Compréhension Écrite', count: state.questions.filter(q => q.section === 'reading' && q.examSet === selectedExamSet).length },
               ].map((tab) => (
                 <button
                   key={tab.key}
@@ -152,6 +373,9 @@ const AdminPanel: React.FC = () => {
             <div className="flex justify-between items-center mb-6">
               <h2 className="text-xl font-semibold text-gray-900">
                 Questions - {activeTab === 'listening' ? 'Compréhension Orale' : activeTab === 'grammar' ? 'Structures de la Langue' : 'Compréhension Écrite'}
+                <span className="text-sm font-normal text-gray-500 ml-2">
+                  ({state.examSets.find(e => e.id === selectedExamSet)?.name})
+                </span>
               </h2>
               <button
                 onClick={() => setShowAddForm(true)}

@@ -32,7 +32,9 @@ const ResultsPage: React.FC = () => {
   };
 
   const getSectionResults = (section: 'listening' | 'grammar' | 'reading') => {
-    const sectionQuestions = state.questions.filter(q => q.section === section);
+    const sectionQuestions = state.questions.filter(q => 
+      q.section === section && q.examSet === state.currentExamSet
+    );
     const correct = sectionQuestions.filter(q => state.answers[q.id] === q.correctAnswer).length;
     return {
       total: sectionQuestions.length,
@@ -56,19 +58,24 @@ const ResultsPage: React.FC = () => {
   const correctAnswers = getCorrectAnswers();
   const incorrectAnswers = getIncorrectAnswers();
   const unanswered = getUnansweredQuestions();
-  const totalQuestions = state.questions.length;
+  const currentExamQuestions = state.questions.filter(q => q.examSet === state.currentExamSet);
+  const totalQuestions = currentExamQuestions.length;
 
   const listeningResults = getSectionResults('listening');
   const grammarResults = getSectionResults('grammar');
   const readingResults = getSectionResults('reading');
 
+  const currentExamSet = state.examSets.find(e => e.id === state.currentExamSet);
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
       {/* Header */}
       <header className="bg-white shadow-sm border-b border-blue-100">
         <div className="max-w-6xl mx-auto px-6 py-4">
           <div className="flex items-center justify-between">
-            <h1 className="text-2xl font-bold text-gray-900">Résultats du Test TCF</h1>
+            <div>
+              <h1 className="text-2xl font-bold text-gray-900">Résultats du Test TCF</h1>
+              <p className="text-sm text-gray-600">{currentExamSet?.name} - {currentExamSet?.description}</p>
+            </div>
             <div className="flex space-x-4">
               <button
                 onClick={handleRetakeTest}
@@ -198,7 +205,7 @@ const ResultsPage: React.FC = () => {
           <h3 className="text-xl font-semibold text-gray-900 mb-6">Analyse Détaillée</h3>
           
           <div className="space-y-6">
-            {state.questions.map((question, index) => {
+            {currentExamQuestions.map((question, index) => {
               const userAnswer = state.answers[question.id];
               const isCorrect = userAnswer === question.correctAnswer;
               const isAnswered = userAnswer !== undefined;
