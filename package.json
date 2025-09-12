@@ -21,7 +21,13 @@
     "build-client-package": "node build-client-package.js",
     "package-for-client": "npm run build-client-package",
     "build-web-package": "node build-web-package.js",
-    "deploy-web": "npm run build:web && npm run build-web-package"
+    "deploy-web": "npm run build:web && npm run build-web-package",
+    "deploy": "node deploy-hosting.js",
+    "deploy:netlify": "node deploy-hosting.js netlify",
+    "deploy:vercel": "node deploy-hosting.js vercel",
+    "deploy:github": "node deploy-hosting.js github",
+    "deploy:traditional": "node deploy-hosting.js traditional",
+    "create-hosting-package": "node deploy-hosting.js package"
   },
   "dependencies": {
     "@supabase/realtime-js": "^2.15.5",
