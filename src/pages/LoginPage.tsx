@@ -15,31 +15,27 @@ const LoginPage: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+    console.log('Form submitted with:', { email: formData.email });
 
     if (!formData.email || !formData.password) {
       setError('Veuillez remplir tous les champs');
       return;
     }
 
-    // Add timeout to prevent hanging
-    const timeoutPromise = new Promise((_, reject) => {
-      setTimeout(() => reject(new Error('Connexion expirée. Veuillez réessayer.')), 10000);
-    });
-
     try {
-      const result = await Promise.race([
-        signIn(formData.email, formData.password),
-        timeoutPromise
-      ]);
+      console.log('Calling signIn...');
+      const result = await signIn(formData.email, formData.password);
+      console.log('SignIn result:', result);
       
-      if (result && typeof result === 'object' && 'success' in result) {
-        if (result.success) {
-          navigate('/');
-        } else {
-          setError(result.error || 'Email ou mot de passe incorrect');
-        }
+      if (result.success) {
+        console.log('Login successful, navigating...');
+        navigate('/');
+      } else {
+        console.log('Login failed:', result.error);
+        setError(result.error || 'Email ou mot de passe incorrect');
       }
     } catch (error: any) {
+      console.error('Login error:', error);
       setError(error.message || 'Erreur de connexion. Veuillez réessayer.');
     }
   };

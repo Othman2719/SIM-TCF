@@ -142,6 +142,7 @@ export function useSupabaseAuth() {
   const signIn = async (email: string, password: string) => {
     try {
       setLoading(true);
+      console.log('Starting sign in process...', { email });
       
       // Direct authentication attempt
       const { data, error } = await supabase.auth.signInWithPassword({
@@ -149,11 +150,14 @@ export function useSupabaseAuth() {
         password,
       });
 
+      console.log('Auth response:', { data: !!data, error: error?.message });
+
       if (error) throw error;
 
       return { success: true, data };
     } catch (error: any) {
       console.error('Sign in error:', error);
+      setLoading(false); // Ensure loading is reset on error
       let errorMessage = 'Erreur de connexion';
       
       if (error.message?.includes('Invalid login credentials')) {
@@ -166,7 +170,8 @@ export function useSupabaseAuth() {
       
       return { success: false, error: errorMessage };
     } finally {
-      setLoading(false);
+      // Don't set loading false here, let the auth state change handle it
+      console.log('Sign in process completed');
     }
   };
 
