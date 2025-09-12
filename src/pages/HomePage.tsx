@@ -1,17 +1,17 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTest } from '../contexts/TestContext';
-import { BookOpen, Clock, Headphones, PenTool, FileText, Target, ChevronRight } from 'lucide-react';
+import { BookOpen, Clock, Headphones, PenTool, FileText, Target, ChevronRight, Lock } from 'lucide-react';
 
 const HomePage: React.FC = () => {
   const navigate = useNavigate();
   const { state, dispatch } = useTest();
+  const [selectedExam, setSelectedExam] = React.useState<number>(1);
 
   const handleStartTest = (examSetId?: number) => {
-    if (examSetId) {
-      dispatch({ type: 'SELECT_EXAM_SET', payload: examSetId });
-    }
-    dispatch({ type: 'START_TEST', payload: examSetId });
+    const examId = examSetId || selectedExam;
+    dispatch({ type: 'SELECT_EXAM_SET', payload: examId });
+    dispatch({ type: 'START_TEST', payload: examId });
     navigate('/test');
   };
 
@@ -60,49 +60,100 @@ const HomePage: React.FC = () => {
         </div>
 
         {/* Exam Selection */}
-        <div className="mb-12">
-          <h3 className="text-2xl font-bold text-gray-900 mb-6 text-center">Choisissez votre examen</h3>
-          <div className="grid md:grid-cols-3 gap-6">
-            {state.examSets.filter(exam => exam.isActive).map((examSet) => {
+        <div className="mb-12 bg-white rounded-xl shadow-md p-8">
+          <h3 className="text-2xl font-bold text-gray-900 mb-8 text-center">Choisir un Examen</h3>
+          <div className="space-y-4 max-w-4xl mx-auto">
+            {state.examSets.map((examSet, index) => {
               const questionCounts = getExamQuestionCount(examSet.id);
+              const isLocked = !examSet.isActive;
+              const isSelected = selectedExam === examSet.id;
+              
               return (
-                <div key={examSet.id} className="bg-white rounded-xl p-6 shadow-md border border-blue-100 hover:shadow-lg transition-shadow">
-                  <div className="text-center mb-4">
-                    <h4 className="text-xl font-bold text-gray-900 mb-2">{examSet.name}</h4>
-                    <p className="text-gray-600 text-sm mb-4">{examSet.description}</p>
-                  </div>
-                  
-                  <div className="space-y-2 mb-6">
-                    <div className="flex justify-between text-sm">
-                      <span className="text-gray-600">Compréhension Orale:</span>
-                      <span className="font-medium">{questionCounts.listening} questions</span>
-                    </div>
-                    <div className="flex justify-between text-sm">
-                      <span className="text-gray-600">Structures de la Langue:</span>
-                      <span className="font-medium">{questionCounts.grammar} questions</span>
-                    </div>
-                    <div className="flex justify-between text-sm">
-                      <span className="text-gray-600">Compréhension Écrite:</span>
-                      <span className="font-medium">{questionCounts.reading} questions</span>
-                    </div>
-                    <div className="border-t pt-2 mt-2">
-                      <div className="flex justify-between text-sm font-semibold">
-                        <span className="text-gray-900">Total:</span>
-                        <span className="text-blue-600">{questionCounts.total} questions</span>
+                <div 
+                  key={examSet.id} 
+                  className={`border-2 rounded-lg p-6 cursor-pointer transition-all ${
+                    isSelected && !isLocked
+                      ? 'border-blue-500 bg-blue-50' 
+                      : isLocked 
+                        ? 'border-gray-200 bg-gray-50' 
+                        : 'border-gray-200 hover:border-gray-300'
+                  }`}
+                  onClick={() => !isLocked && setSelectedExam(examSet.id)}
+                >
+                  <div className="flex items-start space-x-4">
+                    {/* Radio Button */}
+                    <div className="flex-shrink-0 mt-1">
+                      <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
+                        isSelected && !isLocked
+                          ? 'border-blue-500 bg-blue-500'
+                          : isLocked
+                            ? 'border-gray-300 bg-gray-100'
+                            : 'border-gray-300'
+                      }`}>
+                        {isSelected && !isLocked && (
+                          <div className="w-2 h-2 bg-white rounded-full"></div>
+                        )}
                       </div>
                     </div>
+                    
+                    {/* Content */}
+                    <div className="flex-1">
+                      <div className="flex items-center justify-between mb-2">
+                        <div className="flex items-center space-x-3">
+                          <h4 className={`text-lg font-semibold ${
+                            isLocked ? 'text-gray-400' : 'text-gray-900'
+                          }`}>
+                            {index === 0 ? 'TCF - Examen Principal' : examSet.name}
+                          </h4>
+                          <span className={`text-sm ${
+                            isLocked ? 'text-gray-400' : 'text-blue-600'
+                          }`}>
+                            {questionCounts.total} questions
+                          </span>
+                          {isLocked && (
+                            <div className="flex items-center space-x-1 text-orange-500">
+                              <Lock className="w-4 h-4" />
+                              <span className="text-sm font-medium">Verrouillé</span>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                      
+                      <p className={`text-sm mb-3 ${
+                        isLocked ? 'text-gray-400' : 'text-gray-600'
+                      }`}>
+                        {index === 0 
+                          ? 'Examen principal du Test de Connaissance du Français avec questions de tous niveaux'
+                          : examSet.description
+                        }
+                      </p>
+                      
+                      {isLocked && (
+                        <p className="text-sm text-orange-600 font-medium">
+                          Terminez l'examen précédent pour débloquer celui-ci
+                        </p>
+                      )}
+                    </div>
                   </div>
-
-                  <button
-                    onClick={() => handleStartTest(examSet.id)}
-                    className="w-full bg-blue-600 hover:bg-blue-700 text-white px-4 py-3 rounded-lg font-semibold transition-colors flex items-center justify-center space-x-2"
-                  >
-                    <span>Commencer {examSet.name}</span>
-                    <ChevronRight className="w-4 h-4" />
-                  </button>
                 </div>
               );
             })}
+          </div>
+          
+          {/* Start Button */}
+          <div className="text-center mt-8">
+            <button
+              onClick={() => handleStartTest()}
+              disabled={!state.examSets.find(e => e.id === selectedExam)?.isActive}
+              className={`px-8 py-3 rounded-lg font-semibold transition-colors flex items-center justify-center space-x-2 mx-auto ${
+                state.examSets.find(e => e.id === selectedExam)?.isActive
+                  ? 'bg-blue-600 hover:bg-blue-700 text-white'
+                  : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+              }`}
+            >
+              <span>Commencer l'Examen</span>
+              <ChevronRight className="w-4 h-4" />
+            </button>
           </div>
         </div>
         {/* Test Info Cards */}
@@ -214,17 +265,6 @@ const HomePage: React.FC = () => {
         </div>
 
         {/* Quick Start */}
-        <div className="text-center">
-          <p className="text-lg text-gray-600 mb-4">
-            Ou commencez rapidement avec l'examen par défaut
-          </p>
-          <button
-            onClick={() => handleStartTest(1)}
-            className="bg-gray-600 hover:bg-gray-700 text-white px-8 py-3 rounded-lg font-semibold transition-colors"
-          >
-            Démarrage Rapide - Examen 1
-          </button>
-        </div>
       </main>
     </div>
   );

@@ -63,9 +63,10 @@ const initialState: TestState = {
   score: 0,
   level: 'A1',
   examSets: [
-    { id: 1, name: 'Examen 1', description: 'Premier examen d\'entraînement', totalQuestions: 70, isActive: true },
-    { id: 2, name: 'Examen 2', description: 'Deuxième examen d\'entraînement', totalQuestions: 70, isActive: true },
-    { id: 3, name: 'Examen 3', description: 'Troisième examen d\'entraînement', totalQuestions: 70, isActive: true },
+    { id: 1, name: 'TCF - Examen Principal', description: 'Examen principal du Test de Connaissance du Français avec questions de tous niveaux', totalQuestions: 70, isActive: true },
+    { id: 2, name: 'TCF - Examen 2', description: 'Deuxième examen du Test de Connaissance du Français', totalQuestions: 10, isActive: false },
+    { id: 3, name: 'TCF - Examen 3', description: 'Troisième examen du Test de Connaissance du Français', totalQuestions: 10, isActive: false },
+    { id: 4, name: 'TCF - Examen 4', description: 'Quatrième examen du Test de Connaissance du Français', totalQuestions: 5, isActive: false },
   ],
   selectedExamSet: null,
 };
