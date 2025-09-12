@@ -2,87 +2,51 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { User } from '../contexts/AuthContext';
-import { supabase } from '../lib/supabase';
 import { Plus, Edit2, Trash2, Users, Mail, Calendar, ToggleLeft, ToggleRight, Save, X, ArrowLeft } from 'lucide-react';
 
 const UserManagement: React.FC = () => {
   const navigate = useNavigate();
-  const { state, signUp } = useAuth();
-  const [users, setUsers] = useState<User[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { state, dispatch, createUser } = useAuth();
   const [showAddForm, setShowAddForm] = useState(false);
   const [editingUser, setEditingUser] = useState<User | null>(null);
   const [formData, setFormData] = useState({
     username: '',
-    full_name: '',
     email: '',
     password: '',
     role: 'client' as 'admin' | 'client',
-    is_active: true,
+    isActive: true,
   });
 
-  // Load users on component mount
-  React.useEffect(() => {
-    loadUsers();
-  }, []);
-
-  const loadUsers = async () => {
-    try {
-      setLoading(true);
-      const { data, error } = await supabase
-        .from('users')
-        .select('*')
-        .order('created_at', { ascending: false });
-
-      if (error) throw error;
-      setUsers(data || []);
-    } catch (error) {
-      console.error('Error loading users:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
   const handleAddUser = () => {
-    if (!formData.username || !formData.full_name || !formData.email || !formData.password) {
+    if (!formData.username || !formData.email || !formData.password) {
       alert('Veuillez remplir tous les champs obligatoires');
       return;
     }
 
-    const addUser = async () => {
-      try {
-        const result = await signUp(formData.email, formData.password, {
-          username: formData.username,
-          full_name: formData.full_name,
-          role: formData.role,
-        });
+    // Check if username or email already exists
+    const existingUser = state.users.find(
+      u => u.username === formData.username || u.email === formData.email
+    );
 
-        if (result.success) {
-          await loadUsers();
-          resetForm();
-          setShowAddForm(false);
-          alert(`Utilisateur "${formData.username}" créé avec succès !`);
-        } else {
-          alert(result.error || 'Erreur lors de la création de l\'utilisateur');
-        }
-      } catch (error) {
-        console.error('Error creating user:', error);
-        alert('Erreur lors de la création de l\'utilisateur');
-      }
-    };
+    if (existingUser) {
+      alert('Ce nom d\'utilisateur ou email existe déjà');
+      return;
+    }
 
-    addUser();
+    createUser(formData);
+    resetForm();
+    setShowAddForm(false);
+    alert(`Utilisateur "${formData.username}" créé avec succès ! Il peut maintenant se connecter avec ces identifiants.`);
   };
 
   const handleEditUser = (user: User) => {
     setEditingUser(user);
     setFormData({
       username: user.username,
-      full_name: user.full_name,
       email: user.email,
-      password: '', // Don't show existing password
+      password: user.password,
       role: user.role,
-      is_active: user.is_active,
+      isActive: user.isActive,
     });
     setShowAddForm(true);
   };
@@ -90,35 +54,20 @@ const UserManagement: React.FC = () => {
   const handleUpdateUser = () => {
     if (!editingUser) return;
 
-    const updateUser = async () => {
-      try {
-        const updates: any = {
-          username: formData.username,
-          full_name: formData.full_name,
-          email: formData.email,
-          role: formData.role,
-          is_active: formData.is_active,
-        };
-
-        const { error } = await supabase
-          .from('users')
-          .update(updates)
-          .eq('id', editingUser.id);
-
-        if (error) throw error;
-
-        await loadUsers();
-        resetForm();
-        setShowAddForm(false);
-        setEditingUser(null);
-        alert('Utilisateur mis à jour avec succès !');
-      } catch (error) {
-        console.error('Error updating user:', error);
-        alert('Erreur lors de la mise à jour de l\'utilisateur');
-      }
+    const updatedUser: User = {
+      ...editingUser,
+      username: formData.username,
+      email: formData.email,
+      password: formData.password,
+      role: formData.role,
+      isActive: formData.isActive,
     };
 
-    updateUser();
+    dispatch({ type: 'UPDATE_USER', payload: updatedUser });
+    resetForm();
+    setShowAddForm(false);
+    setEditingUser(null);
+    alert('Utilisateur mis à jour avec succès !');
   };
 
   const handleDeleteUser = (userId: string) => {
@@ -128,23 +77,7 @@ const UserManagement: React.FC = () => {
     }
 
     if (confirm('Êtes-vous sûr de vouloir supprimer cet utilisateur ?')) {
-      const deleteUser = async () => {
-        try {
-          const { error } = await supabase
-            .from('users')
-            .delete()
-            .eq('id', userId);
-
-          if (error) throw error;
-
-          await loadUsers();
-          alert('Utilisateur supprimé avec succès !');
-        } catch (error) {
-          console.error('Error deleting user:', error);
-          alert('Erreur lors de la suppression de l\'utilisateur');
-        }
-      };
-      deleteUser();
+      dispatch({ type: 'DELETE_USER', payload: userId });
     }
   };
 
@@ -154,36 +87,16 @@ const UserManagement: React.FC = () => {
       return;
     }
 
-    const toggleStatus = async () => {
-      try {
-        const user = users.find(u => u.id === userId);
-        if (!user) return;
-
-        const { error } = await supabase
-          .from('users')
-          .update({ is_active: !user.is_active })
-          .eq('id', userId);
-
-        if (error) throw error;
-
-        await loadUsers();
-      } catch (error) {
-        console.error('Error toggling user status:', error);
-        alert('Erreur lors de la modification du statut');
-      }
-    };
-
-    toggleStatus();
+    dispatch({ type: 'TOGGLE_USER_STATUS', payload: userId });
   };
 
   const resetForm = () => {
     setFormData({
       username: '',
-      full_name: '',
       email: '',
       password: '',
       role: 'client',
-      is_active: true,
+      isActive: true,
     });
   };
 
@@ -195,16 +108,8 @@ const UserManagement: React.FC = () => {
     });
   };
 
-  const clientUsers = users.filter(u => u.role === 'client');
-  const adminUsers = users.filter(u => u.role === 'admin');
-
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600"></div>
-      </div>
-    );
-  }
+  const clientUsers = state.users.filter(u => u.role === 'client');
+  const adminUsers = state.users.filter(u => u.role === 'admin');
 
   return (
     <div className="space-y-8">
@@ -242,7 +147,7 @@ const UserManagement: React.FC = () => {
               <Users className="w-5 h-5 text-blue-600" />
             </div>
             <div>
-              <p className="text-2xl font-bold text-gray-900">{users.length}</p>
+              <p className="text-2xl font-bold text-gray-900">{state.users.length}</p>
               <p className="text-sm text-gray-600">Total Utilisateurs</p>
             </div>
           </div>
@@ -284,19 +189,6 @@ const UserManagement: React.FC = () => {
 
           <div className="p-6">
             <div className="grid md:grid-cols-2 gap-6">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Nom complet *
-                </label>
-                <input
-                  type="text"
-                  value={formData.full_name}
-                  onChange={(e) => setFormData({ ...formData, full_name: e.target.value })}
-                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  placeholder="Nom complet"
-                />
-              </div>
-
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Nom d'utilisateur *
@@ -355,12 +247,12 @@ const UserManagement: React.FC = () => {
               <div className="flex items-center space-x-2">
                 <input
                   type="checkbox"
-                  id="is_active"
-                  checked={formData.is_active}
-                  onChange={(e) => setFormData({ ...formData, is_active: e.target.checked })}
+                  id="isActive"
+                  checked={formData.isActive}
+                  onChange={(e) => setFormData({ ...formData, isActive: e.target.checked })}
                   className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
                 />
-                <label htmlFor="is_active" className="text-sm text-gray-700">
+                <label htmlFor="isActive" className="text-sm text-gray-700">
                   Compte actif (l'utilisateur peut se connecter)
                 </label>
               </div>
@@ -421,7 +313,7 @@ const UserManagement: React.FC = () => {
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
-              {users.map((user) => (
+              {state.users.map((user) => (
                 <tr key={user.id} className="hover:bg-gray-50">
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="flex items-center">
@@ -432,7 +324,6 @@ const UserManagement: React.FC = () => {
                       </div>
                       <div className="ml-3">
                         <p className="text-sm font-medium text-gray-900">{user.username}</p>
-                        <p className="text-xs text-gray-500">{user.full_name}</p>
                       </div>
                     </div>
                   </td>
@@ -459,7 +350,7 @@ const UserManagement: React.FC = () => {
                         user.id === state.currentUser?.id ? 'cursor-not-allowed opacity-50' : 'cursor-pointer'
                       }`}
                     >
-                      {user.is_active ? (
+                      {user.isActive ? (
                         <>
                           <ToggleRight className="w-5 h-5 text-green-600" />
                           <span className="text-sm text-green-600">Actif</span>
@@ -475,7 +366,7 @@ const UserManagement: React.FC = () => {
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="flex items-center space-x-2">
                       <Calendar className="w-4 h-4 text-gray-400" />
-                      <span className="text-sm text-gray-500">{formatDate(user.created_at)}</span>
+                      <span className="text-sm text-gray-500">{formatDate(user.createdAt)}</span>
                     </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">

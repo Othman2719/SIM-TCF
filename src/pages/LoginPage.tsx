@@ -5,9 +5,9 @@ import { BookOpen, User, Lock, AlertCircle, Loader } from 'lucide-react';
 
 const LoginPage: React.FC = () => {
   const navigate = useNavigate();
-  const { signIn, state } = useAuth();
+  const { login, state } = useAuth();
   const [formData, setFormData] = useState({
-    email: '',
+    username: '',
     password: '',
   });
   const [error, setError] = useState('');
@@ -16,17 +16,17 @@ const LoginPage: React.FC = () => {
     e.preventDefault();
     setError('');
 
-    if (!formData.email || !formData.password) {
+    if (!formData.username || !formData.password) {
       setError('Veuillez remplir tous les champs');
       return;
     }
 
-    const result = await signIn(formData.email, formData.password);
+    const success = await login(formData.username, formData.password);
     
-    if (result.success) {
+    if (success) {
       navigate('/');
     } else {
-      setError(result.error || 'Email ou mot de passe incorrect');
+      setError('Nom d\'utilisateur ou mot de passe incorrect');
     }
   };
 
@@ -63,17 +63,17 @@ const LoginPage: React.FC = () => {
         <form onSubmit={handleSubmit} className="space-y-6">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Email
+              Nom d'utilisateur ou Email
             </label>
             <div className="relative">
               <User className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
               <input
-                type="email"
-                name="email"
-                value={formData.email}
+                type="text"
+                name="username"
+                value={formData.username}
                 onChange={handleChange}
                 className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                placeholder="Entrez votre email"
+                placeholder="Entrez votre nom d'utilisateur"
                 disabled={state.isLoading}
               />
             </div>
@@ -113,17 +113,13 @@ const LoginPage: React.FC = () => {
           </button>
         </form>
 
-        {/* Sign Up Link */}
-        <div className="mt-8 text-center">
-          <p className="text-sm text-gray-600">
-            Pas encore de compte ?{' '}
-            <button
-              onClick={() => navigate('/register')}
-              className="text-blue-600 hover:text-blue-800 font-medium"
-            >
-              Créer un compte
-            </button>
-          </p>
+        {/* Demo Credentials */}
+        <div className="mt-8 p-4 bg-gray-50 rounded-lg">
+          <h3 className="text-sm font-medium text-gray-700 mb-2">Comptes de démonstration:</h3>
+          <div className="text-xs text-gray-600 space-y-1">
+            <p><strong>Admin:</strong> admin / admin123</p>
+            <p><strong>Client:</strong> client / client123</p>
+          </div>
         </div>
       </div>
     </div>

@@ -106,6 +106,22 @@ const ResultsPage: React.FC = () => {
 
   const globalPercentage = totalQuestions > 0 ? Math.round((correctAnswers / totalQuestions) * 100) : 0;
 
+  const handleDownloadPDF = () => {
+    const certificateData: CertificateData = {
+      userName: authState.currentUser?.username || 'UTILISATEUR',
+      userEmail: authState.currentUser?.email || 'test@example.com',
+      score: state.score,
+      level: state.level,
+      listeningScore: Math.round((listeningResults.percentage / 100) * (state.score / 3)),
+      grammarScore: Math.round((grammarResults.percentage / 100) * (state.score / 3)),
+      readingScore: Math.round((readingResults.percentage / 100) * (state.score / 3)),
+      certificateNumber,
+      date: currentDate
+    };
+    
+    downloadCertificatePDF(certificateData);
+  }
+
   return (
     <div className="min-h-screen bg-gray-100">
       {/* Header */}
@@ -182,156 +198,135 @@ const ResultsPage: React.FC = () => {
           </div>
         </div>
 
-        {/* Certificate Actions */}
-        <div className="bg-white rounded-xl shadow-lg p-6 mb-8">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-3">
-              <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
-                <Award className="w-6 h-6 text-green-600" />
-              </div>
-              <div>
-                <h3 className="text-xl font-semibold text-gray-900">Certificat Brixel Academy</h3>
-                <p className="text-sm text-gray-600">Téléchargez ou imprimez votre certificat de niveau TCF</p>
-              </div>
-            </div>
-            <div className="flex space-x-3">
-              <button
-                onClick={handleDownloadPDF}
-                className="flex items-center space-x-2 bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors"
-              >
-                <Download className="w-4 h-4" />
-                <span>Télécharger PDF</span>
-              </button>
-              <button
-                onClick={handlePrintCertificate}
-                className="flex items-center space-x-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
-              >
-                <Printer className="w-4 h-4" />
-                <span>Imprimer</span>
-              </button>
-            </div>
-          </div>
-        </div>
-
-        {/* Question Review Section */}
+        {/* Certificate Section */}
         <div className="bg-white rounded-xl shadow-lg">
+          {/* Certificate Header */}
           <div className="border-b border-gray-200 p-6">
-            <h3 className="text-xl font-semibold text-gray-900">Révision des Questions</h3>
-            <p className="text-sm text-gray-600 mt-1">Consultez vos réponses pour chaque question de l'examen</p>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-3">
+                <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
+                  <Award className="w-6 h-6 text-green-600" />
+                </div>
+                <div>
+                  <h3 className="text-xl font-semibold text-gray-900">Certificat Brixel Academy</h3>
+                  <p className="text-sm text-gray-600">Téléchargez ou imprimez votre certificat de niveau TCF délivré par Brixel Academy</p>
+                </div>
+              </div>
+              <div className="flex space-x-3 print:hidden">
+                <button
+                  onClick={handleDownloadPDF}
+                  className="flex items-center space-x-2 bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors"
+                >
+                  <Download className="w-4 h-4" />
+                  <span>Télécharger PDF</span>
+                </button>
+                <button
+                  onClick={handlePrintCertificate}
+                  className="flex items-center space-x-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
+                >
+                  <Printer className="w-4 h-4" />
+                  <span>Imprimer</span>
+                </button>
+              </div>
+            </div>
           </div>
 
-          {/* Section Tabs */}
-          <div className="border-b border-gray-200">
-            <nav className="-mb-px flex space-x-8 px-6">
-              {[
-                { key: 'listening', label: 'Compréhension Orale', icon: '🎧' },
-                { key: 'grammar', label: 'Structures de la Langue', icon: '✏️' },
-                { key: 'reading', label: 'Compréhension Écrite', icon: '📖' },
-              ].map((tab) => {
-                const sectionQuestions = currentExamQuestions.filter(q => q.section === tab.key);
-                const sectionCorrect = sectionQuestions.filter(q => state.answers[q.id] === q.correctAnswer).length;
+          {/* Certificate Content */}
+          <div className="p-8 bg-gradient-to-br from-blue-50 to-white">
+            <div className="max-w-4xl mx-auto">
+              {/* Header with French Republic and TCF */}
+              <div className="flex justify-between items-start mb-8">
+                <div className="bg-blue-600 text-white p-4 rounded-lg text-center">
+                  <div className="text-xs font-bold">RÉPUBLIQUE</div>
+                  <div className="text-xs font-bold">FRANÇAISE</div>
+                  <div className="text-xs mt-2">Liberté</div>
+                  <div className="text-xs">Égalité</div>
+                  <div className="text-xs">Fraternité</div>
+                </div>
+                <div className="text-center">
+                  <div className="text-blue-600 font-bold text-sm">FRANCE</div>
+                  <div className="text-blue-600 font-bold text-sm">ÉDUCATION</div>
+                  <div className="text-gray-600 text-xs">INTERNATIONAL</div>
+                </div>
+                <div className="text-red-500 font-bold text-4xl">TCF</div>
+              </div>
+
+              {/* Title */}
+              <div className="text-center mb-8">
+                <h2 className="text-3xl font-bold text-purple-600 mb-4">Attestation TCF</h2>
+              </div>
+
+              {/* Personal Information */}
+              <div className="space-y-4 mb-8">
+                <div className="flex items-center space-x-4">
+                  <span className="text-gray-700 font-medium w-40">Nom:</span>
+                  <span className="text-gray-900 font-bold text-lg">{authState.currentUser?.username?.toUpperCase() || 'UTILISATEUR'}</span>
+                </div>
+                <div className="flex items-center space-x-4">
+                  <span className="text-gray-700 font-medium w-40">Prénom:</span>
+                  <span className="text-gray-900 font-bold text-lg">{authState.currentUser?.email?.split('@')[0] || 'Test'}</span>
+                </div>
+                <div className="flex items-center space-x-4">
+                  <span className="text-gray-700 font-medium w-40">N° de certificat:</span>
+                  <span className="text-gray-900 font-bold text-lg">{certificateNumber}</span>
+                </div>
+                <div className="flex items-center space-x-4">
+                  <span className="text-gray-700 font-medium w-40">Date:</span>
+                  <span className="text-gray-900 font-bold text-lg">{currentDate}</span>
+                </div>
+              </div>
+
+              {/* Results Table */}
+              <div className="mb-8">
+                <h3 className="text-xl font-bold text-purple-600 mb-4">Résultats des épreuves</h3>
                 
-                return (
-                  <div key={tab.key} className="py-4 px-1 border-b-2 border-transparent">
-                    <div className="flex items-center space-x-2">
-                      <span>{tab.icon}</span>
-                      <span className="font-medium text-gray-700">{tab.label}</span>
-                      <span className="px-2 py-1 text-xs bg-gray-100 text-gray-600 rounded-full">
-                        {sectionCorrect}/{sectionQuestions.length}
-                      </span>
-                    </div>
-                  </div>
-                );
-              })}
-            </nav>
-          </div>
-
-          {/* Questions by Section */}
-          <div className="p-6">
-            {['listening', 'grammar', 'reading'].map((section) => {
-              const sectionQuestions = currentExamQuestions.filter(q => q.section === section);
-              const sectionName = section === 'listening' ? 'Compréhension Orale' : 
-                                section === 'grammar' ? 'Structures de la Langue' : 
-                                'Compréhension Écrite';
-              
-              return (
-                <div key={section} className="mb-8">
-                  <h4 className="text-lg font-semibold text-gray-900 mb-4 flex items-center space-x-2">
-                    <span>{section === 'listening' ? '🎧' : section === 'grammar' ? '✏️' : '📖'}</span>
-                    <span>{sectionName}</span>
-                  </h4>
-                  
-                  <div className="space-y-4">
-                    {sectionQuestions.map((question, index) => {
-                      const userAnswer = state.answers[question.id];
-                      const isCorrect = userAnswer === question.correctAnswer;
-                      const isAnswered = userAnswer !== undefined;
-                      
-                      return (
-                        <div key={question.id} className={`border-2 rounded-lg p-6 ${
-                          !isAnswered ? 'border-yellow-200 bg-yellow-50' :
-                          isCorrect ? 'border-green-200 bg-green-50' : 'border-red-200 bg-red-50'
-                        }`}>
-                          <div className="flex items-start justify-between mb-4">
-                            <div className="flex items-center space-x-3">
-                              <span className="text-sm font-medium text-gray-500">
-                                Question {index + 1}
-                              </span>
-                              <div className={`px-2 py-1 rounded-full text-xs font-medium ${
-                                !isAnswered ? 'bg-yellow-100 text-yellow-800' :
-                                isCorrect ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
-                              }`}>
-                                {!isAnswered ? 'Non répondu' : isCorrect ? 'Correct' : 'Incorrect'}
-                              </div>
-                            </div>
-                          </div>
-                          
-                          <p className="text-gray-900 mb-4 font-medium">{question.questionText}</p>
-                          
-                          <div className="grid grid-cols-1 gap-2">
-                            {question.options.map((option, optIndex) => {
-                              const isUserAnswer = userAnswer === optIndex;
-                              const isCorrectAnswer = question.correctAnswer === optIndex;
-                              
-                              return (
-                                <div
-                                  key={optIndex}
-                                  className={`p-3 rounded-lg border ${
-                                    isCorrectAnswer 
-                                      ? 'border-green-300 bg-green-100 text-green-800' 
-                                      : isUserAnswer && !isCorrectAnswer
-                                        ? 'border-red-300 bg-red-100 text-red-800'
-                                        : 'border-gray-200 bg-gray-50 text-gray-700'
-                                  }`}
-                                >
-                                  <div className="flex items-center space-x-3">
-                                    <span className="font-semibold">
-                                      {String.fromCharCode(65 + optIndex)}.
-                                    </span>
-                                    <span>{option}</span>
-                                    <div className="ml-auto flex items-center space-x-2">
-                                      {isCorrectAnswer && (
-                                        <CheckCircle className="w-4 h-4 text-green-600" />
-                                      )}
-                                      {isUserAnswer && !isCorrectAnswer && (
-                                        <XCircle className="w-4 h-4 text-red-600" />
-                                      )}
-                                      {isUserAnswer && (
-                                        <span className="text-xs font-medium">Votre réponse</span>
-                                      )}
-                                    </div>
-                                  </div>
-                                </div>
-                              );
-                            })}
-                          </div>
-                        </div>
-                      );
-                    })}
+                {/* Table Header */}
+                <div className="bg-purple-600 text-white rounded-t-lg">
+                  <div className="grid grid-cols-3 gap-4 p-4 font-bold">
+                    <div>Épreuve</div>
+                    <div className="text-center">Score</div>
+                    <div className="text-center">Niveau</div>
                   </div>
                 </div>
-              );
-            })}
+                
+                {/* Table Body */}
+                <div className="border-2 border-purple-600 border-t-0 rounded-b-lg">
+                  <div className="grid grid-cols-3 gap-4 p-4 border-b border-gray-200">
+                    <div className="text-gray-700">Compréhension orale</div>
+                    <div className="text-center text-gray-700">{Math.round((listeningResults.percentage / 100) * (state.score / 3))} pts</div>
+                    <div className="text-center text-gray-700">{state.level}</div>
+                  </div>
+                  <div className="grid grid-cols-3 gap-4 p-4 border-b border-gray-200">
+                    <div className="text-gray-700">Maîtrise des structures de la langue</div>
+                    <div className="text-center text-gray-700">{Math.round((grammarResults.percentage / 100) * (state.score / 3))} pts</div>
+                    <div className="text-center text-gray-700">{state.level}</div>
+                  </div>
+                  <div className="grid grid-cols-3 gap-4 p-4 border-b border-gray-200">
+                    <div className="text-gray-700">Compréhension écrite</div>
+                    <div className="text-center text-gray-700">{Math.round((readingResults.percentage / 100) * (state.score / 3))} pts</div>
+                    <div className="text-center text-gray-700">{state.level}</div>
+                  </div>
+                  <div className="grid grid-cols-3 gap-4 p-4 bg-gray-100 font-bold">
+                    <div className="text-purple-600">Score Global</div>
+                    <div className="text-center text-purple-600">{state.score} / 699 pts</div>
+                    <div className="text-center text-purple-600">{state.level}</div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Footer with Brixel Academy */}
+              <div className="text-center">
+                <div className="text-3xl font-bold text-purple-600 mb-2">BRIXEL</div>
+                <div className="text-2xl font-bold text-purple-600 mb-4">ACADEMY</div>
+                <div className="text-sm text-gray-600 mb-2">Ce certificat est délivré par</div>
+                <div className="text-lg font-bold text-gray-700">Brixel Academy</div>
+              </div>
+            </div>
+          </div>
+
+          {/* Certificate Footer */}
+          <div className="border-t border-gray-200 p-4 text-center text-xs text-gray-500 print:hidden">
+            Ce certificat provisoire est délivré par Brixel Academy pour attester de votre niveau TCF
           </div>
         </div>
 

@@ -2,12 +2,8 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTest } from '../contexts/TestContext';
 import { useAuth } from '../contexts/AuthContext';
-import { ExamService } from '../services/examService';
 import { Plus, Edit2, Trash2, Upload, Home, Save, FolderPlus, Folder } from 'lucide-react';
-import { Question } from '../contexts/TestContext';
-import { Database } from '../lib/supabase';
-
-type ExamSet = Database['public']['Tables']['exam_sets']['Row'];
+import { Question, ExamSet } from '../contexts/TestContext';
 
 const AdminPanel: React.FC = () => {
   const navigate = useNavigate();
@@ -42,46 +38,22 @@ const AdminPanel: React.FC = () => {
       return;
     }
 
-    const addQuestion = async () => {
-      try {
-        const questionData = {
-          exam_set_id: selectedExamSet,
-          section: activeTab as 'listening' | 'grammar' | 'reading',
-          question_text: formData.questionText,
-          options: formData.options,
-          correct_answer: formData.correctAnswer,
-          level: 'A1' as 'A1' | 'A2' | 'B1' | 'B2' | 'C1' | 'C2',
-          audio_url: formData.audioFile ? URL.createObjectURL(formData.audioFile) : null,
-          image_url: formData.imageFile ? URL.createObjectURL(formData.imageFile) : null,
-        };
-
-        const newQuestion = await ExamService.createQuestion(questionData);
-        
-        // Update local state
-        const formattedQuestion: Question = {
-          id: newQuestion.id,
-          section: newQuestion.section,
-          examSet: newQuestion.exam_set_id,
-          questionText: newQuestion.question_text,
-          options: newQuestion.options,
-          correctAnswer: newQuestion.correct_answer,
-          level: newQuestion.level,
-          audioUrl: newQuestion.audio_url || undefined,
-          imageUrl: newQuestion.image_url || undefined,
-          explanation: newQuestion.explanation || undefined,
-        };
-
-        dispatch({ type: 'SET_QUESTIONS', payload: [...state.questions, formattedQuestion] });
-        resetForm();
-        setShowAddForm(false);
-        alert('Question ajoutée avec succès !');
-      } catch (error) {
-        console.error('Error adding question:', error);
-        alert('Erreur lors de l\'ajout de la question');
-      }
+    const newQuestion: Question = {
+      id: `${activeTab}_${Date.now()}`,
+      section: activeTab,
+      examSet: selectedExamSet,
+      questionText: formData.questionText,
+      options: formData.options,
+      correctAnswer: formData.correctAnswer,
+      level: 'A1' as Question['level'], // Default level
+      audioUrl: formData.audioFile ? URL.createObjectURL(formData.audioFile) : undefined,
+      imageUrl: formData.imageFile ? URL.createObjectURL(formData.imageFile) : undefined,
     };
 
-    addQuestion();
+    dispatch({ type: 'SET_QUESTIONS', payload: [...state.questions, newQuestion] });
+    resetForm();
+    setShowAddForm(false);
+    alert('Question ajoutée avec succès ! Elle est maintenant disponible pour tous les utilisateurs.');
   };
 
   const handleEditQuestion = (question: Question) => {
@@ -99,60 +71,32 @@ const AdminPanel: React.FC = () => {
   const handleUpdateQuestion = () => {
     if (!editingQuestion) return;
 
-    const updateQuestion = async () => {
-      try {
-        const updates = {
-          question_text: formData.questionText,
-          options: formData.options,
-          correct_answer: formData.correctAnswer,
-          audio_url: formData.audioFile ? URL.createObjectURL(formData.audioFile) : undefined,
-          image_url: formData.imageFile ? URL.createObjectURL(formData.imageFile) : undefined,
-        };
+    const updatedQuestions = state.questions.map(q =>
+      q.id === editingQuestion.id
+        ? {
+            ...q,
+            questionText: formData.questionText,
+            options: formData.options,
+            correctAnswer: formData.correctAnswer,
+            level: q.level, // Keep existing level
+            audioUrl: formData.audioFile ? URL.createObjectURL(formData.audioFile) : q.audioUrl,
+            imageUrl: formData.imageFile ? URL.createObjectURL(formData.imageFile) : q.imageUrl,
+          }
+        : q
+    );
 
-        await ExamService.updateQuestion(editingQuestion.id, updates);
-        
-        // Update local state
-        const updatedQuestions = state.questions.map(q =>
-          q.id === editingQuestion.id
-            ? {
-                ...q,
-                questionText: formData.questionText,
-                options: formData.options,
-                correctAnswer: formData.correctAnswer,
-                audioUrl: formData.audioFile ? URL.createObjectURL(formData.audioFile) : q.audioUrl,
-                imageUrl: formData.imageFile ? URL.createObjectURL(formData.imageFile) : q.imageUrl,
-              }
-            : q
-        );
-
-        dispatch({ type: 'SET_QUESTIONS', payload: updatedQuestions });
-        resetForm();
-        setShowAddForm(false);
-        setEditingQuestion(null);
-        alert('Question mise à jour avec succès !');
-      } catch (error) {
-        console.error('Error updating question:', error);
-        alert('Erreur lors de la mise à jour de la question');
-      }
-    };
-
-    updateQuestion();
+    dispatch({ type: 'SET_QUESTIONS', payload: updatedQuestions });
+    resetForm();
+    setShowAddForm(false);
+    setEditingQuestion(null);
+    alert('Question mise à jour avec succès !');
   };
 
   const handleDeleteQuestion = (questionId: string) => {
     if (confirm('Êtes-vous sûr de vouloir supprimer cette question ?')) {
-      const deleteQuestion = async () => {
-        try {
-          await ExamService.deleteQuestion(questionId);
-          const updatedQuestions = state.questions.filter(q => q.id !== questionId);
-          dispatch({ type: 'SET_QUESTIONS', payload: updatedQuestions });
-          alert('Question supprimée avec succès !');
-        } catch (error) {
-          console.error('Error deleting question:', error);
-          alert('Erreur lors de la suppression de la question');
-        }
-      };
-      deleteQuestion();
+      const updatedQuestions = state.questions.filter(q => q.id !== questionId);
+      dispatch({ type: 'SET_QUESTIONS', payload: updatedQuestions });
+      alert('Question supprimée avec succès !');
     }
   };
 
@@ -162,59 +106,33 @@ const AdminPanel: React.FC = () => {
       return;
     }
 
-    const addExamSet = async () => {
-      try {
-        const examSetData = {
-          name: examFormData.name,
-          description: examFormData.description,
-          is_active: examFormData.isActive,
-        };
-
-        const newExamSet = await ExamService.createExamSet(examSetData);
-        dispatch({ type: 'SET_EXAM_SETS', payload: [...state.examSets, newExamSet] });
-        resetExamForm();
-        setShowExamForm(false);
-        alert('Nouvel examen créé avec succès !');
-      } catch (error) {
-        console.error('Error creating exam set:', error);
-        alert('Erreur lors de la création de l\'examen');
-      }
+    const newExamSet: ExamSet = {
+      id: Math.max(...state.examSets.map(e => e.id), 0) + 1,
+      name: examFormData.name,
+      description: examFormData.description,
+      totalQuestions: 0,
+      isActive: examFormData.isActive,
     };
 
-    addExamSet();
+    dispatch({ type: 'SET_EXAM_SETS', payload: [...state.examSets, newExamSet] });
+    resetExamForm();
+    setShowExamForm(false);
+    alert('Nouvel examen créé avec succès !');
   };
 
   const handleUpdateExamSet = () => {
     if (!editingExam) return;
 
-    const updateExamSet = async () => {
-      try {
-        const updates = {
-          name: examFormData.name,
-          description: examFormData.description,
-          is_active: examFormData.isActive,
-        };
+    const updatedExamSets = state.examSets.map(exam =>
+      exam.id === editingExam.id
+        ? { ...exam, name: examFormData.name, description: examFormData.description, isActive: examFormData.isActive }
+        : exam
+    );
 
-        await ExamService.updateExamSet(editingExam.id, updates);
-        
-        const updatedExamSets = state.examSets.map(exam =>
-          exam.id === editingExam.id
-            ? { ...exam, name: examFormData.name, description: examFormData.description, is_active: examFormData.isActive }
-            : exam
-        );
-
-        dispatch({ type: 'SET_EXAM_SETS', payload: updatedExamSets });
-        resetExamForm();
-        setShowExamForm(false);
-        setEditingExam(null);
-        alert('Examen mis à jour avec succès !');
-      } catch (error) {
-        console.error('Error updating exam set:', error);
-        alert('Erreur lors de la mise à jour de l\'examen');
-      }
-    };
-
-    updateExamSet();
+    dispatch({ type: 'SET_EXAM_SETS', payload: updatedExamSets });
+    resetExamForm();
+    setShowExamForm(false);
+    setEditingExam(null);
   };
 
   const handleEditExamSet = (examSet: ExamSet) => {
@@ -222,30 +140,20 @@ const AdminPanel: React.FC = () => {
     setExamFormData({
       name: examSet.name,
       description: examSet.description,
-      isActive: examSet.is_active,
+      isActive: examSet.isActive,
     });
     setShowExamForm(true);
   };
 
   const handleDeleteExamSet = (examSetId: number) => {
     if (confirm('Êtes-vous sûr de vouloir supprimer cet examen et toutes ses questions ?')) {
-      const deleteExamSet = async () => {
-        try {
-          await ExamService.deleteExamSet(examSetId);
-          const updatedExamSets = state.examSets.filter(e => e.id !== examSetId);
-          const updatedQuestions = state.questions.filter(q => q.examSet !== examSetId);
-          dispatch({ type: 'SET_EXAM_SETS', payload: updatedExamSets });
-          dispatch({ type: 'SET_QUESTIONS', payload: updatedQuestions });
-          if (selectedExamSet === examSetId) {
-            setSelectedExamSet(1);
-          }
-          alert('Examen supprimé avec succès !');
-        } catch (error) {
-          console.error('Error deleting exam set:', error);
-          alert('Erreur lors de la suppression de l\'examen');
-        }
-      };
-      deleteExamSet();
+      const updatedExamSets = state.examSets.filter(e => e.id !== examSetId);
+      const updatedQuestions = state.questions.filter(q => q.examSet !== examSetId);
+      dispatch({ type: 'SET_EXAM_SETS', payload: updatedExamSets });
+      dispatch({ type: 'SET_QUESTIONS', payload: updatedQuestions });
+      if (selectedExamSet === examSetId) {
+        setSelectedExamSet(1);
+      }
     }
   };
 
@@ -454,9 +362,9 @@ const AdminPanel: React.FC = () => {
                     <div className="flex justify-between items-center text-xs">
                       <span className="text-gray-500">{questionCount.total} questions</span>
                       <span className={`px-2 py-1 rounded-full ${
-                        examSet.is_active ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'
+                        examSet.isActive ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'
                       }`}>
-                        {examSet.is_active ? 'Actif' : 'Inactif'}
+                        {examSet.isActive ? 'Actif' : 'Inactif'}
                       </span>
                     </div>
                   </div>
