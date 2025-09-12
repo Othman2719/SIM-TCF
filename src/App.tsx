@@ -14,9 +14,9 @@ import './App.css';
 
 function App() {
   return (
-    <AuthProvider>
-      <TestProvider>
-        <Router>
+    <Router>
+      <AuthProvider>
+        <TestProvider>
           <div className="min-h-screen bg-gray-50">
             <Routes>
               <Route path="/login" element={<LoginPage />} />
@@ -49,9 +49,9 @@ function App() {
               <Route path="*" element={<Navigate to="/" replace />} />
             </Routes>
           </div>
-        </Router>
-      </TestProvider>
-    </AuthProvider>
+        </TestProvider>
+      </AuthProvider>
+    </Router>
   );
 }
 
