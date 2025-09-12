@@ -10,48 +10,23 @@ const LoginPage: React.FC = () => {
     email: '',
     password: '',
   });
-  const [isSubmitting, setIsSubmitting] = useState(false);
-
-  // Redirect if already authenticated
-  React.useEffect(() => {
-    if (state.isAuthenticated && state.currentUser) {
-      console.log('Already authenticated user detected:', state.currentUser.role);
-      if (state.currentUser.role === 'admin') {
-        console.log('Redirecting authenticated admin to /admin');
-        navigate('/admin');
-      } else {
-        console.log('Redirecting authenticated user to /');
-        navigate('/');
-      }
-    }
-  }, [state.isAuthenticated, state.currentUser, navigate]);
+  const [error, setError] = useState('');
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+    setError('');
+
     if (!formData.email || !formData.password) {
+      setError('Veuillez remplir tous les champs');
       return;
     }
 
-    if (isSubmitting) {
-      return; // Prevent double submission
-    }
-
-    setIsSubmitting(true);
-
-    try {
-      console.log('Submitting login form...');
-      const result = await signIn(formData.email, formData.password);
-      console.log('Login result:', result);
-      
-      if (!result.success) {
-        console.error('Login failed:', result.error);
-      }
-      // Success case is handled by the auth context navigation
-    } catch (error) {
-      console.error('Login error:', error);
-    } finally {
-      setIsSubmitting(false);
+    const result = await signIn(formData.email, formData.password);
+    
+    if (result.success) {
+      navigate('/');
+    } else {
+      setError(result.error || 'Email ou mot de passe incorrect');
     }
   };
 
@@ -61,31 +36,6 @@ const LoginPage: React.FC = () => {
       [e.target.name]: e.target.value,
     });
   };
-
-  // Show loading screen while checking initial auth state
-  if (state.isLoading) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-lg text-gray-600">
-            {isSubmitting ? 'Connexion...' : 'Chargement...'}
-          </p>
-          {state.error && (
-            <div className="mt-4 p-4 bg-red-50 border border-red-200 rounded-lg">
-              <p className="text-red-700 text-sm">{state.error}</p>
-              <button
-                onClick={() => window.location.reload()}
-                className="mt-2 text-sm text-red-600 hover:text-red-800 underline"
-              >
-                Recharger la page
-              </button>
-            </div>
-          )}
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
@@ -100,11 +50,11 @@ const LoginPage: React.FC = () => {
         </div>
 
         {/* Error Message */}
-        {state.error && (
+        {error && (
           <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
             <div className="flex items-center space-x-2">
               <AlertCircle className="w-5 h-5 text-red-600" />
-              <p className="text-red-700 text-sm">{state.error}</p>
+              <p className="text-red-700 text-sm">{error}</p>
             </div>
           </div>
         )}
@@ -124,8 +74,7 @@ const LoginPage: React.FC = () => {
                 onChange={handleChange}
                 className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 placeholder="Entrez votre email"
-                disabled={isSubmitting}
-                required
+                disabled={state.isLoading}
               />
             </div>
           </div>
@@ -143,18 +92,17 @@ const LoginPage: React.FC = () => {
                 onChange={handleChange}
                 className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 placeholder="Entrez votre mot de passe"
-                disabled={isSubmitting}
-                required
+                disabled={state.isLoading}
               />
             </div>
           </div>
 
           <button
             type="submit"
-            disabled={isSubmitting || !formData.email || !formData.password}
+            disabled={state.isLoading}
             className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white font-semibold py-3 px-4 rounded-lg transition-colors flex items-center justify-center space-x-2"
           >
-            {isSubmitting ? (
+            {state.isLoading ? (
               <>
                 <Loader className="w-5 h-5 animate-spin" />
                 <span>Connexion...</span>
@@ -165,21 +113,17 @@ const LoginPage: React.FC = () => {
           </button>
         </form>
 
-        {/* Test Credentials */}
-        <div className="mt-8 p-4 bg-gray-50 rounded-lg">
-          <p className="text-sm text-gray-600 mb-2">Comptes de test :</p>
-          <div className="space-y-2">
-            <div>
-              <p className="text-xs font-medium text-purple-600">Super Admin (Owner):</p>
-              <p className="text-xs text-gray-500">Email: owner@brixel.com</p>
-              <p className="text-xs text-gray-500">Mot de passe: BrixelOwner@2024</p>
-            </div>
-            <div>
-              <p className="text-xs font-medium text-blue-600">Admin:</p>
-              <p className="text-xs text-gray-500">Email: tcfadmin@brixel.com</p>
-              <p className="text-xs text-gray-500">Mot de passe: Mostaganem@27</p>
-            </div>
-          </div>
+        {/* Sign Up Link */}
+        <div className="mt-8 text-center">
+          <p className="text-sm text-gray-600">
+            Pas encore de compte ?{' '}
+            <button
+              onClick={() => navigate('/register')}
+              className="text-blue-600 hover:text-blue-800 font-medium"
+            >
+              Créer un compte
+            </button>
+          </p>
         </div>
       </div>
     </div>

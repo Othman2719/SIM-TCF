@@ -14,13 +14,15 @@ import './App.css';
 
 function App() {
   return (
-    <Router>
-      <AuthProvider>
-        <TestProvider>
+    <AuthProvider>
+      <TestProvider>
+        <Router>
           <div className="min-h-screen bg-gray-50">
             <Routes>
               <Route path="/login" element={<LoginPage />} />
-              <Route path="/register" element={<RegisterPage />} />
+              <Route path="/register" element={
+                <RegisterPage />
+              } />
               <Route path="/" element={
                 <ProtectedRoute>
                   <HomePage />
@@ -49,9 +51,9 @@ function App() {
               <Route path="*" element={<Navigate to="/" replace />} />
             </Routes>
           </div>
-        </TestProvider>
-      </AuthProvider>
-    </Router>
+        </Router>
+      </TestProvider>
+    </AuthProvider>
   );
 }
 

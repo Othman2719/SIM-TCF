@@ -11,15 +11,13 @@ const HomePage: React.FC = () => {
 
   // Redirect admins to admin panel
   React.useEffect(() => {
-    if (authState.isAuthenticated && ['admin', 'super_admin'].includes(authState.currentUser?.role || '')) {
-      console.log('Admin detected in HomePage, redirecting to admin panel');
+    if (authState.currentUser?.role === 'admin') {
       navigate('/admin');
     }
-  }, [authState.isAuthenticated, authState.currentUser, navigate]);
+  }, [authState.currentUser, navigate]);
 
   // Don't render homepage for admins
-  if (authState.isAuthenticated && ['admin', 'super_admin'].includes(authState.currentUser?.role || '')) {
-    console.log('Admin user detected, not rendering homepage');
+  if (authState.currentUser?.role === 'admin') {
     return null;
   }
 
@@ -68,7 +66,7 @@ const HomePage: React.FC = () => {
               <div className="text-sm text-gray-600">
                 Bonjour, <span className="font-medium">{authState.currentUser?.full_name || authState.currentUser?.username}</span>
               </div>
-              {['admin', 'super_admin'].includes(authState.currentUser?.role || '') && (
+              {authState.currentUser?.role === 'admin' && (
                 <button
                   onClick={() => navigate('/admin')}
                   className="px-4 py-2 text-sm text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"

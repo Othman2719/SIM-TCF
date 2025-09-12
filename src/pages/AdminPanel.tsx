@@ -12,7 +12,7 @@ type ExamSet = Database['public']['Tables']['exam_sets']['Row'];
 const AdminPanel: React.FC = () => {
   const navigate = useNavigate();
   const { state, dispatch } = useTest();
-  const { logout, state: authState } = useAuth();
+  const { logout } = useAuth();
   const [activeTab, setActiveTab] = useState<'listening' | 'grammar' | 'reading'>('listening');
   const [selectedExamSet, setSelectedExamSet] = useState<number>(1);
   const [showAddForm, setShowAddForm] = useState(false);
@@ -305,11 +305,6 @@ const AdminPanel: React.FC = () => {
               >
                 <span>Gestion Utilisateurs</span>
               </button>
-              {authState.currentUser?.role === 'super_admin' && (
-                <div className="px-3 py-1 bg-purple-100 text-purple-800 text-xs font-semibold rounded-full">
-                  SUPER ADMIN
-                </div>
-              )}
               <button
                 onClick={() => navigate('/')}
                 className="flex items-center space-x-2 px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
