@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from './contexts/AuthContext';
+import { WordPressProvider } from './contexts/WordPressContext';
 import HomePage from './pages/HomePage';
 import TestInterface from './pages/TestInterface';
 import AdminPanel from './pages/AdminPanel';
@@ -15,42 +16,44 @@ import './App.css';
 function App() {
   return (
     <AuthProvider>
-      <TestProvider>
-        <Router>
-          <div className="min-h-screen bg-gray-50">
-            <Routes>
-              <Route path="/login" element={<LoginPage />} />
-              <Route path="/" element={
-                <ProtectedRoute>
-                  <HomePage />
-                </ProtectedRoute>
-              } />
-              <Route path="/test" element={
-                <ProtectedRoute>
-                  <TestInterface />
-                </ProtectedRoute>
-              } />
-              <Route path="/admin" element={
-                <ProtectedRoute requireAdmin={true}>
-                  <AdminPanel />
-                </ProtectedRoute>
-              } />
-              <Route path="/users" element={
-                <ProtectedRoute requireAdmin={true}>
-                  <UserManagement />
-                </ProtectedRoute>
-              } />
-              <Route path="/results" element={
-                <ProtectedRoute>
-                  <ResultsPage />
-                </ProtectedRoute>
-              } />
-              <Route path="*" element={<Navigate to="/" replace />} />
-            </Routes>
-            <LicenseValidator />
-          </div>
-        </Router>
-      </TestProvider>
+      <WordPressProvider>
+        <TestProvider>
+          <Router>
+            <div className="min-h-screen bg-gray-50">
+              <Routes>
+                <Route path="/login" element={<LoginPage />} />
+                <Route path="/" element={
+                  <ProtectedRoute>
+                    <HomePage />
+                  </ProtectedRoute>
+                } />
+                <Route path="/test" element={
+                  <ProtectedRoute>
+                    <TestInterface />
+                  </ProtectedRoute>
+                } />
+                <Route path="/admin" element={
+                  <ProtectedRoute requireAdmin={true}>
+                    <AdminPanel />
+                  </ProtectedRoute>
+                } />
+                <Route path="/users" element={
+                  <ProtectedRoute requireAdmin={true}>
+                    <UserManagement />
+                  </ProtectedRoute>
+                } />
+                <Route path="/results" element={
+                  <ProtectedRoute>
+                    <ResultsPage />
+                  </ProtectedRoute>
+                } />
+                <Route path="*" element={<Navigate to="/" replace />} />
+              </Routes>
+              <LicenseValidator />
+            </div>
+          </Router>
+        </TestProvider>
+      </WordPressProvider>
     </AuthProvider>
   );
 }
