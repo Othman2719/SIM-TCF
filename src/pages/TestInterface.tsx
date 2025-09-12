@@ -5,11 +5,17 @@ import TimerComponent from '../components/TimerComponent';
 import QuestionComponent from '../components/QuestionComponent';
 import NavigationComponent from '../components/NavigationComponent';
 import ProgressBar from '../components/ProgressBar';
-import { Clock, Volume2, PenTool, FileText, AlertTriangle } from 'lucide-react';
+import { mockQuestions } from '../data/mockQuestions';
+import { Clock, Volume2, PenTool, FileText } from 'lucide-react';
 
 const TestInterface: React.FC = () => {
   const { state, dispatch } = useTest();
   const navigate = useNavigate();
+
+  useEffect(() => {
+    // Load mock questions
+    dispatch({ type: 'SET_QUESTIONS', payload: mockQuestions });
+  }, [dispatch]);
 
   useEffect(() => {
     if (!state.testStarted) {
@@ -30,12 +36,6 @@ const TestInterface: React.FC = () => {
     return () => clearInterval(timer);
   }, [state.testStarted, state.testCompleted, dispatch, navigate]);
 
-  const handleEmergencyStop = () => {
-    if (confirm('ARRÊT D\'URGENCE\n\nÊtes-vous sûr de vouloir quitter le test maintenant ?\n\nToutes vos réponses seront perdues et ne seront pas sauvegardées.')) {
-      dispatch({ type: 'RESET_TEST' });
-      navigate('/');
-    }
-  };
   const getSectionQuestions = () => {
     return state.questions.filter(q => 
       q.section === state.currentSection && q.examSet === state.currentExamSet
@@ -109,13 +109,6 @@ const TestInterface: React.FC = () => {
               <span className="text-sm text-gray-500">{getSectionTime()}</span>
             </div>
             <div className="flex items-center space-x-4">
-              <button
-                onClick={handleEmergencyStop}
-                className="flex items-center space-x-2 px-4 py-2 bg-red-600 text-white rounded-lg font-medium hover:bg-red-700 transition-colors"
-              >
-                <AlertTriangle className="w-4 h-4" />
-                <span>Arrêt d'Urgence</span>
-              </button>
               <div className="flex items-center space-x-2 text-gray-600">
                 <Clock className="w-4 h-4" />
                 <TimerComponent />
