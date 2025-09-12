@@ -106,22 +106,6 @@ const ResultsPage: React.FC = () => {
 
   const globalPercentage = totalQuestions > 0 ? Math.round((correctAnswers / totalQuestions) * 100) : 0;
 
-  const handleDownloadPDF = () => {
-    const certificateData: CertificateData = {
-      userName: authState.currentUser?.username || 'UTILISATEUR',
-      userEmail: authState.currentUser?.email || 'test@example.com',
-      score: state.score,
-      level: state.level,
-      listeningScore: Math.round((listeningResults.percentage / 100) * (state.score / 3)),
-      grammarScore: Math.round((grammarResults.percentage / 100) * (state.score / 3)),
-      readingScore: Math.round((readingResults.percentage / 100) * (state.score / 3)),
-      certificateNumber,
-      date: currentDate
-    };
-    
-    downloadCertificatePDF(certificateData);
-  }
-
   return (
     <div className="min-h-screen bg-gray-100">
       {/* Header */}
