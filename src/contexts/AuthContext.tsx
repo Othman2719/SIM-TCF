@@ -206,11 +206,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const login = async (email: string, password: string): Promise<boolean> => {
     dispatch({ type: 'SET_LOADING', payload: true });
 
-    // Check if Supabase is configured
     if (!isSupabaseConfigured()) {
-      console.error('Cannot login: Supabase not configured');
+      // Demo mode - allow login with any credentials
+      console.warn('⚠️ Supabase not configured. Running in demo mode.');
+      
+      // Create a demo user for testing
+      const demoUser: User = {
+        id: 'demo-user-' + Date.now(),
+        username: email.split('@')[0] || 'demo',
+        email: email,
+        role: email.includes('admin') ? 'admin' : 'client',
+        isActive: true,
+        createdAt: new Date().toISOString(),
+      };
+      
+      dispatch({ type: 'LOGIN_SUCCESS', payload: demoUser });
       dispatch({ type: 'SET_LOADING', payload: false });
-      return false;
+      return true;
     }
 
     try {
