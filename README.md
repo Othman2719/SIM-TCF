@@ -17,7 +17,7 @@ A comprehensive Test de Connaissance du Français (TCF) simulator designed for l
 ## 🚀 Quick Start
 ### Prerequisites
 - Node.js 18+ installed
-- Supabase account (for multi-user functionality)
+- Supabase account and project set up
 ### Installation
 ```bash
 # Clone the repository
@@ -25,10 +25,32 @@ git clone <your-repo-url>
 cd tcf-simulator
 # Install dependencies
 npm install
-# Set up environment variables
-cp .env.example .env
-# Edit .env with your Supabase credentials
+# Configure Supabase (see Setup Guide below)
+# Add your Supabase credentials to .env file
 ```
+### Supabase Setup Guide
+
+1. **Create Supabase Account**:
+   - Go to [https://supabase.com](https://supabase.com)
+   - Sign up and create a new project named `tcf-simulator`
+
+2. **Get Your Credentials**:
+   - Go to Settings → API in your Supabase dashboard
+   - Copy your Project URL and Anon Key
+
+3. **Set Up Database**:
+   - Go to SQL Editor in Supabase
+   - Copy and run the contents of `supabase/migrations/001_initial_schema.sql`
+   - Then run `supabase/migrations/002_sample_data.sql`
+
+4. **Configure Environment**:
+   - Edit `.env` file with your actual Supabase credentials
+   - Replace the placeholder values with your real Project URL and Anon Key
+
+5. **Enable Realtime**:
+   - Go to Database → Replication in Supabase
+   - Enable realtime for tables: `exam_sets`, `questions`, `users`
+
 ### Development
 ```bash
 # Run web version
