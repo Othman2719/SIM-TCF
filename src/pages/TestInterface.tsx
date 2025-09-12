@@ -87,6 +87,12 @@ const TestInterface: React.FC = () => {
   const sectionQuestions = getSectionQuestions();
   const currentQuestion = sectionQuestions[state.currentQuestionIndex];
 
+  // Handle case where currentQuestion is undefined
+  if (!currentQuestion) {
+    dispatch({ type: 'RESET_TEST' });
+    navigate('/');
+    return null;
+  }
 
   return (
     <div className="min-h-screen bg-gray-50">
