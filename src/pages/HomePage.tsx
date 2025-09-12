@@ -2,7 +2,6 @@ import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTest } from '../contexts/TestContext';
 import { useAuth } from '../contexts/AuthContext';
-import { onMenuNewTest, removeAllListeners } from '../utils/electronUtils';
 import { BookOpen, Clock, Headphones, PenTool, FileText, Target, ChevronRight, Lock, AlertCircle } from 'lucide-react';
 
 const HomePage: React.FC = () => {
@@ -24,18 +23,6 @@ const HomePage: React.FC = () => {
 
   const [selectedExam, setSelectedExam] = React.useState<number>(1);
   const [showStartModal, setShowStartModal] = React.useState(false);
-
-  // Handle Electron menu events
-  React.useEffect(() => {
-    onMenuNewTest(() => {
-      dispatch({ type: 'RESET_TEST' });
-      setShowStartModal(true);
-    });
-
-    return () => {
-      removeAllListeners('menu-new-test');
-    };
-  }, [dispatch]);
 
   const handleStartTest = (examSetId?: number) => {
     setShowStartModal(true);

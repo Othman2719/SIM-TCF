@@ -50,8 +50,7 @@ type TestAction =
   | { type: 'CALCULATE_SCORE' }
   | { type: 'RESET_TEST' }
   | { type: 'SET_EXAM_SETS'; payload: ExamSet[] }
-  | { type: 'SELECT_EXAM_SET'; payload: number }
-  | { type: 'SET_QUESTION_INDEX'; payload: number };
+  | { type: 'SELECT_EXAM_SET'; payload: number };
 
 const initialState: TestState = {
   currentSection: 'home',
@@ -105,18 +104,15 @@ function testReducer(state: TestState, action: TestAction): TestState {
       };
 
     case 'SET_SECTION':
+      const newSectionQuestions = state.questions.filter(q => 
+        q.section === action.payload && q.examSet === state.currentExamSet
+      );
       return {
         ...state,
         currentSection: action.payload,
         currentQuestionIndex: action.payload === 'listening' ? 0 : 
                             action.payload === 'grammar' ? 0 : 
                             action.payload === 'reading' ? 0 : state.currentQuestionIndex,
-      };
-
-    case 'SET_QUESTION_INDEX':
-      return {
-        ...state,
-        currentQuestionIndex: action.payload,
       };
 
     case 'NEXT_QUESTION':
@@ -153,26 +149,10 @@ function testReducer(state: TestState, action: TestAction): TestState {
       return { ...state, timeRemaining: newTime };
 
     case 'COMPLETE_TEST':
-      // Calculate which exam was just completed
-      const completedExamId = state.currentExamSet;
-      
-      // Find the next exam to unlock
-      const updatedExamSets = state.examSets.map(examSet => {
-        // If this is the next exam after the completed one, unlock it
-        if (examSet.id === completedExamId + 1) {
-          return { ...examSet, isActive: true };
-        }
-        return examSet;
-      });
-      
-      // Save updated exam sets to localStorage
-      saveToStorage('tcf_exam_sets', updatedExamSets);
-      
       return {
         ...state,
         testCompleted: true,
         currentSection: 'results',
-        examSets: updatedExamSets,
       };
 
     case 'SET_QUESTIONS':

@@ -6,9 +6,7 @@ const NavigationComponent: React.FC = () => {
   const { state, dispatch } = useTest();
 
   const getCurrentSectionQuestions = () => {
-    return state.questions.filter(q => 
-      q.section === state.currentSection && q.examSet === state.currentExamSet
-    );
+    return state.questions.filter(q => q.section === state.currentSection);
   };
 
   const handleNext = () => {
@@ -42,18 +40,22 @@ const NavigationComponent: React.FC = () => {
         case 'grammar':
           dispatch({ type: 'SET_SECTION', payload: 'listening' });
           // Set to last question of listening section
-          const listeningQuestions = state.questions.filter(q => 
-            q.section === 'listening' && q.examSet === state.currentExamSet
-          );
-          dispatch({ type: 'SET_QUESTION_INDEX', payload: listeningQuestions.length - 1 });
+          const listeningQuestions = state.questions.filter(q => q.section === 'listening');
+          setTimeout(() => {
+            for (let i = 0; i < listeningQuestions.length - 1; i++) {
+              dispatch({ type: 'NEXT_QUESTION' });
+            }
+          }, 0);
           break;
         case 'reading':
           dispatch({ type: 'SET_SECTION', payload: 'grammar' });
           // Set to last question of grammar section
-          const grammarQuestions = state.questions.filter(q => 
-            q.section === 'grammar' && q.examSet === state.currentExamSet
-          );
-          dispatch({ type: 'SET_QUESTION_INDEX', payload: grammarQuestions.length - 1 });
+          const grammarQuestions = state.questions.filter(q => q.section === 'grammar');
+          setTimeout(() => {
+            for (let i = 0; i < grammarQuestions.length - 1; i++) {
+              dispatch({ type: 'NEXT_QUESTION' });
+            }
+          }, 0);
           break;
       }
     }
