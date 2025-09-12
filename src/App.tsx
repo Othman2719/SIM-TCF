@@ -20,6 +20,7 @@ function App() {
           <div className="min-h-screen bg-gray-50">
             <Routes>
               <Route path="/login" element={<LoginPage />} />
+              <Route path="/register" element={<RegisterPage />} />
               <Route path="/" element={
                 <ProtectedRoute>
                   <HomePage />
