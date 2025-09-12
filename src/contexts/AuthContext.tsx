@@ -140,9 +140,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       console.log('Fetching user profile for:', userId);
       
+      // Check Supabase connection first
+      const { data: connectionTest, error: connectionError } = await supabase
+        .from('users')
+        .select('count')
+        .limit(1);
+      
+      if (connectionError) {
+        console.error('Supabase connection test failed:', connectionError);
+        dispatch({ type: 'SET_ERROR', payload: 'Impossible de se connecter à la base de données. Vérifiez votre connexion internet.' });
+        return;
+      }
+      
       // Add timeout to prevent hanging
       const timeoutPromise = new Promise((_, reject) => {
-        setTimeout(() => reject(new Error('Profile fetch timeout')), 60000);
+        setTimeout(() => reject(new Error('Profile fetch timeout')), 30000);
       });
 
       const fetchPromise = supabase
@@ -151,7 +163,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         .eq('id', userId)
         .single();
 
-      const { data, error } = await Promise.race([fetchPromise, timeoutPromise]);
+      const { data, error } = await Promise.race([fetchPromise, timeoutPromise]) as any;
 
       if (error) {
         console.error('Profile fetch error:', error);
@@ -161,7 +173,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           await createUserProfile(userId);
           return;
         }
-        dispatch({ type: 'SET_ERROR', payload: 'Erreur de chargement du profil' });
+        dispatch({ type: 'SET_ERROR', payload: `Erreur de chargement du profil: ${error.message}` });
         return;
       }
 
@@ -173,7 +185,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
     } catch (error: any) {
       console.error('Profile fetch error:', error);
-      dispatch({ type: 'SET_ERROR', payload: error.message });
+      if (error.message === 'Failed to fetch') {
+        dispatch({ type: 'SET_ERROR', payload: 'Erreur de connexion réseau. Vérifiez votre connexion internet et les variables d\'environnement Supabase.' });
+      } else {
+        dispatch({ type: 'SET_ERROR', payload: error.message });
+      }
     }
   };
 
