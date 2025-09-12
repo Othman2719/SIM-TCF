@@ -47,6 +47,11 @@ export interface TestState {
   level: string;
   examSets: ExamSet[];
   selectedExamSet: number | null;
+  completedExams: number[];
+  userProgress: Record<string, {
+    completedExams: number[];
+    lastCompletedAt: string;
+  }>;
 }
 
 type TestAction =
@@ -62,7 +67,10 @@ type TestAction =
   | { type: 'CALCULATE_SCORE' }
   | { type: 'RESET_TEST' }
   | { type: 'SET_EXAM_SETS'; payload: ExamSet[] }
-  | { type: 'SELECT_EXAM_SET'; payload: number };
+  | { type: 'SELECT_EXAM_SET'; payload: number }
+  | { type: 'UNLOCK_NEXT_EXAM'; payload: number }
+  | { type: 'SAVE_USER_PROGRESS'; payload: { userId: string; examId: number } }
+  | { type: 'LOAD_USER_PROGRESS'; payload: string };
 
 const initialState: TestState = {
   currentSection: 'home',
@@ -83,6 +91,8 @@ const initialState: TestState = {
     { id: 4, name: 'TCF - Examen 4', description: 'Quatrième examen du Test de Connaissance du Français', totalQuestions: 5, isActive: false },
   ],
   selectedExamSet: null,
+  completedExams: [],
+  userProgress: {},
 };
 
 // Load data from localStorage
@@ -161,10 +171,28 @@ function testReducer(state: TestState, action: TestAction): TestState {
       return { ...state, timeRemaining: newTime };
 
     case 'COMPLETE_TEST':
+      // Unlock next exam when current exam is completed
+      const nextExamId = state.currentExamSet + 1;
+      const updatedExamSets = state.examSets.map(exam => 
+        exam.id === nextExamId ? { ...exam, isActive: true } : exam
+      );
+      
+      // Add current exam to completed list
+      const newCompletedExams = [...state.completedExams];
+      if (!newCompletedExams.includes(state.currentExamSet)) {
+        newCompletedExams.push(state.currentExamSet);
+      }
+      
+      // Save to localStorage
+      saveToStorage('tcf_completed_exams', newCompletedExams);
+      saveToStorage('tcf_exam_sets', updatedExamSets);
+      
       return {
         ...state,
         testCompleted: true,
         currentSection: 'results',
+        completedExams: newCompletedExams,
+        examSets: updatedExamSets,
       };
 
     case 'SET_QUESTIONS':
@@ -210,6 +238,8 @@ function testReducer(state: TestState, action: TestAction): TestState {
         ...initialState,
         questions: loadFromStorage('tcf_questions', mockQuestions),
         examSets: loadFromStorage('tcf_exam_sets', initialState.examSets),
+        completedExams: loadFromStorage('tcf_completed_exams', []),
+        userProgress: loadFromStorage('tcf_user_progress', {}),
         selectedExamSet: null,
       };
 
@@ -226,6 +256,50 @@ function testReducer(state: TestState, action: TestAction): TestState {
         selectedExamSet: action.payload,
         currentExamSet: action.payload,
       };
+
+    case 'UNLOCK_NEXT_EXAM':
+      const unlockedExamSets = state.examSets.map(exam => 
+        exam.id === action.payload ? { ...exam, isActive: true } : exam
+      );
+      saveToStorage('tcf_exam_sets', unlockedExamSets);
+      return {
+        ...state,
+        examSets: unlockedExamSets,
+      };
+
+    case 'SAVE_USER_PROGRESS':
+      const { userId, examId } = action.payload;
+      const updatedProgress = {
+        ...state.userProgress,
+        [userId]: {
+          completedExams: [...(state.userProgress[userId]?.completedExams || []), examId],
+          lastCompletedAt: new Date().toISOString(),
+        }
+      };
+      saveToStorage('tcf_user_progress', updatedProgress);
+      return {
+        ...state,
+        userProgress: updatedProgress,
+      };
+
+    case 'LOAD_USER_PROGRESS':
+      const userProgressData = state.userProgress[action.payload];
+      if (userProgressData) {
+        const userCompletedExams = userProgressData.completedExams;
+        const examSetsWithProgress = state.examSets.map(exam => {
+          // Unlock exams based on user progress
+          if (exam.id === 1) return { ...exam, isActive: true }; // First exam always unlocked
+          if (userCompletedExams.includes(exam.id - 1)) return { ...exam, isActive: true };
+          return exam;
+        });
+        
+        return {
+          ...state,
+          completedExams: userCompletedExams,
+          examSets: examSetsWithProgress,
+        };
+      }
+      return state;
 
     default:
       return state;
@@ -250,6 +324,8 @@ export function TestProvider({ children }: { children: ReactNode }) {
     ...initialState,
     questions: loadFromStorage('tcf_questions', mockQuestions),
     examSets: loadFromStorage('tcf_exam_sets', initialState.examSets),
+    completedExams: loadFromStorage('tcf_completed_exams', []),
+    userProgress: loadFromStorage('tcf_user_progress', {}),
   });
 
   // Real-time subscriptions
@@ -526,6 +602,15 @@ export function TestProvider({ children }: { children: ReactNode }) {
     loadExamSets();
     loadQuestions();
   }, []);
+
+  // Load user progress when user changes
+  const { state: authState } = useAuth();
+  React.useEffect(() => {
+    if (authState.currentUser) {
+      dispatch({ type: 'LOAD_USER_PROGRESS', payload: authState.currentUser.id });
+    }
+  }, [authState.currentUser]);
+
   return (
     <TestContext.Provider value={{ 
       state, 

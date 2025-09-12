@@ -210,7 +210,7 @@ const HomePage: React.FC = () => {
           <div className="space-y-4 max-w-4xl mx-auto">
             {state.examSets.map((examSet, index) => {
               const questionCounts = getExamQuestionCount(examSet.id);
-              const isLocked = !examSet.isActive;
+              const isLocked = !examSet.isActive && !state.completedExams.includes(examSet.id - 1);
               const isSelected = selectedExam === examSet.id;
               
               return (
@@ -275,7 +275,8 @@ const HomePage: React.FC = () => {
                       
                       {isLocked && (
                         <p className="text-sm text-orange-600 font-medium">
-                          Terminez l'examen précédent pour débloquer celui-ci
+                          {examSet.id === 1 ? 'Examen principal - Toujours disponible' : 
+                           `Terminez l'examen ${examSet.id - 1} pour débloquer celui-ci`}
                         </p>
                       )}
                     </div>
