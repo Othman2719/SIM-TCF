@@ -7,7 +7,16 @@ import { Question, ExamSet } from '../contexts/TestContext';
 
 const AdminPanel: React.FC = () => {
   const navigate = useNavigate();
-  const { state, dispatch } = useTest();
+  const { 
+    state, 
+    dispatch, 
+    createExamSet, 
+    createQuestion, 
+    updateExamSet, 
+    updateQuestion, 
+    deleteExamSet, 
+    deleteQuestion 
+  } = useTest();
   const { logout } = useAuth();
   const [activeTab, setActiveTab] = useState<'listening' | 'grammar' | 'reading'>('listening');
   const [selectedExamSet, setSelectedExamSet] = useState<number>(1);
@@ -38,22 +47,26 @@ const AdminPanel: React.FC = () => {
       return;
     }
 
-    const newQuestion: Question = {
-      id: `${activeTab}_${Date.now()}`,
+    const newQuestionData = {
       section: activeTab,
       examSet: selectedExamSet,
       questionText: formData.questionText,
       options: formData.options,
       correctAnswer: formData.correctAnswer,
-      level: 'A1' as Question['level'], // Default level
+      level: 'A1' as Question['level'],
       audioUrl: formData.audioFile ? URL.createObjectURL(formData.audioFile) : undefined,
       imageUrl: formData.imageFile ? URL.createObjectURL(formData.imageFile) : undefined,
     };
 
-    dispatch({ type: 'SET_QUESTIONS', payload: [...state.questions, newQuestion] });
-    resetForm();
-    setShowAddForm(false);
-    alert('Question ajoutée avec succès ! Elle est maintenant disponible pour tous les utilisateurs.');
+    createQuestion(newQuestionData)
+      .then(() => {
+        resetForm();
+        setShowAddForm(false);
+        alert('Question ajoutée avec succès ! Elle est maintenant visible par tous les utilisateurs.');
+      })
+      .catch((error) => {
+        alert('Erreur lors de la création de la question: ' + error.message);
+      });
   };
 
   const handleEditQuestion = (question: Question) => {
@@ -71,25 +84,24 @@ const AdminPanel: React.FC = () => {
   const handleUpdateQuestion = () => {
     if (!editingQuestion) return;
 
-    const updatedQuestions = state.questions.map(q =>
-      q.id === editingQuestion.id
-        ? {
-            ...q,
-            questionText: formData.questionText,
-            options: formData.options,
-            correctAnswer: formData.correctAnswer,
-            level: q.level, // Keep existing level
-            audioUrl: formData.audioFile ? URL.createObjectURL(formData.audioFile) : q.audioUrl,
-            imageUrl: formData.imageFile ? URL.createObjectURL(formData.imageFile) : q.imageUrl,
-          }
-        : q
-    );
+    const updates = {
+      questionText: formData.questionText,
+      options: formData.options,
+      correctAnswer: formData.correctAnswer,
+      audioUrl: formData.audioFile ? URL.createObjectURL(formData.audioFile) : editingQuestion.audioUrl,
+      imageUrl: formData.imageFile ? URL.createObjectURL(formData.imageFile) : editingQuestion.imageUrl,
+    };
 
-    dispatch({ type: 'SET_QUESTIONS', payload: updatedQuestions });
-    resetForm();
-    setShowAddForm(false);
-    setEditingQuestion(null);
-    alert('Question mise à jour avec succès !');
+    updateQuestion(editingQuestion.id, updates)
+      .then(() => {
+        resetForm();
+        setShowAddForm(false);
+        setEditingQuestion(null);
+        alert('Question mise à jour avec succès !');
+      })
+      .catch((error) => {
+        alert('Erreur lors de la mise à jour: ' + error.message);
+      });
   };
 
   const handleDeleteQuestion = (questionId: string) => {
@@ -106,33 +118,43 @@ const AdminPanel: React.FC = () => {
       return;
     }
 
-    const newExamSet: ExamSet = {
-      id: Math.max(...state.examSets.map(e => e.id), 0) + 1,
+    const newExamSetData = {
       name: examFormData.name,
       description: examFormData.description,
-      totalQuestions: 0,
+      totalQuestions: 0, // Will be calculated
       isActive: examFormData.isActive,
     };
 
-    dispatch({ type: 'SET_EXAM_SETS', payload: [...state.examSets, newExamSet] });
-    resetExamForm();
-    setShowExamForm(false);
-    alert('Nouvel examen créé avec succès !');
+    createExamSet(newExamSetData)
+      .then(() => {
+        resetExamForm();
+        setShowExamForm(false);
+        alert('Nouvel examen créé avec succès ! Il est maintenant visible par tous les utilisateurs.');
+      })
+      .catch((error) => {
+        alert('Erreur lors de la création de l\'examen: ' + error.message);
+      });
   };
 
   const handleUpdateExamSet = () => {
     if (!editingExam) return;
 
-    const updatedExamSets = state.examSets.map(exam =>
-      exam.id === editingExam.id
-        ? { ...exam, name: examFormData.name, description: examFormData.description, isActive: examFormData.isActive }
-        : exam
-    );
+    const updates = {
+      name: examFormData.name,
+      description: examFormData.description,
+      isActive: examFormData.isActive,
+    };
 
-    dispatch({ type: 'SET_EXAM_SETS', payload: updatedExamSets });
-    resetExamForm();
-    setShowExamForm(false);
-    setEditingExam(null);
+    updateExamSet(editingExam.id, updates)
+      .then(() => {
+        resetExamForm();
+        setShowExamForm(false);
+        setEditingExam(null);
+        alert('Examen mis à jour avec succès !');
+      })
+      .catch((error) => {
+        alert('Erreur lors de la mise à jour: ' + error.message);
+      });
   };
 
   const handleEditExamSet = (examSet: ExamSet) => {
@@ -147,13 +169,16 @@ const AdminPanel: React.FC = () => {
 
   const handleDeleteExamSet = (examSetId: number) => {
     if (confirm('Êtes-vous sûr de vouloir supprimer cet examen et toutes ses questions ?')) {
-      const updatedExamSets = state.examSets.filter(e => e.id !== examSetId);
-      const updatedQuestions = state.questions.filter(q => q.examSet !== examSetId);
-      dispatch({ type: 'SET_EXAM_SETS', payload: updatedExamSets });
-      dispatch({ type: 'SET_QUESTIONS', payload: updatedQuestions });
-      if (selectedExamSet === examSetId) {
-        setSelectedExamSet(1);
-      }
+      deleteExamSet(examSetId)
+        .then(() => {
+          if (selectedExamSet === examSetId) {
+            setSelectedExamSet(1);
+          }
+          alert('Examen supprimé avec succès !');
+        })
+        .catch((error) => {
+          alert('Erreur lors de la suppression: ' + error.message);
+        });
     }
   };
 

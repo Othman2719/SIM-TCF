@@ -1,5 +1,7 @@
 import React, { createContext, useContext, useReducer, ReactNode } from 'react';
 import { mockQuestions } from '../data/mockQuestions';
+import { supabase } from '../lib/supabase';
+import { useAuth } from './AuthContext';
 
 export interface Question {
   id: string;
@@ -11,6 +13,9 @@ export interface Question {
   audioUrl?: string;
   imageUrl?: string;
   level: 'A1' | 'A2' | 'B1' | 'B2' | 'C1' | 'C2';
+  createdBy?: string;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export interface ExamSet {
@@ -19,6 +24,12 @@ export interface ExamSet {
   description: string;
   totalQuestions: number;
   isActive: boolean;
+  isPremium?: boolean;
+  difficultyLevel?: string;
+  timeLimitMinutes?: number;
+  createdBy?: string;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export interface TestState {
@@ -223,6 +234,14 @@ function testReducer(state: TestState, action: TestAction): TestState {
 const TestContext = createContext<{
   state: TestState;
   dispatch: React.Dispatch<TestAction>;
+  loadExamSets: () => Promise<void>;
+  loadQuestions: () => Promise<void>;
+  createExamSet: (examSet: Omit<ExamSet, 'id' | 'createdAt' | 'updatedAt'>) => Promise<void>;
+  createQuestion: (question: Omit<Question, 'id' | 'createdAt' | 'updatedAt'>) => Promise<void>;
+  updateExamSet: (id: number, updates: Partial<ExamSet>) => Promise<void>;
+  updateQuestion: (id: string, updates: Partial<Question>) => Promise<void>;
+  deleteExamSet: (id: number) => Promise<void>;
+  deleteQuestion: (id: string) => Promise<void>;
 } | undefined>(undefined);
 
 export function TestProvider({ children }: { children: ReactNode }) {
@@ -232,8 +251,273 @@ export function TestProvider({ children }: { children: ReactNode }) {
     examSets: loadFromStorage('tcf_exam_sets', initialState.examSets),
   });
 
+  // Real-time subscriptions
+  React.useEffect(() => {
+    // Subscribe to exam sets changes
+    const examSetsSubscription = supabase
+      .channel('exam_sets_changes')
+      .on('postgres_changes', 
+        { event: '*', schema: 'public', table: 'exam_sets' },
+        (payload) => {
+          console.log('Exam sets change received:', payload);
+          loadExamSets();
+        }
+      )
+      .subscribe();
+
+    // Subscribe to questions changes
+    const questionsSubscription = supabase
+      .channel('questions_changes')
+      .on('postgres_changes',
+        { event: '*', schema: 'public', table: 'questions' },
+        (payload) => {
+          console.log('Questions change received:', payload);
+          loadQuestions();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      examSetsSubscription.unsubscribe();
+      questionsSubscription.unsubscribe();
+    };
+  }, []);
+
+  // Load exam sets from Supabase
+  const loadExamSets = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('exam_sets')
+        .select('*')
+        .eq('is_active', true)
+        .order('created_at', { ascending: true });
+
+      if (error) throw error;
+
+      if (data) {
+        const formattedExamSets: ExamSet[] = data.map(item => ({
+          id: item.id,
+          name: item.name,
+          description: item.description || '',
+          totalQuestions: 0, // Will be calculated
+          isActive: item.is_active,
+          isPremium: item.is_premium,
+          difficultyLevel: item.difficulty_level,
+          timeLimitMinutes: item.time_limit_minutes,
+          createdBy: item.created_by,
+          createdAt: item.created_at,
+          updatedAt: item.updated_at,
+        }));
+
+        dispatch({ type: 'SET_EXAM_SETS', payload: formattedExamSets });
+      }
+    } catch (error) {
+      console.error('Error loading exam sets:', error);
+    }
+  };
+
+  // Load questions from Supabase
+  const loadQuestions = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('questions')
+        .select(`
+          *,
+          exam_sets!inner(is_active)
+        `)
+        .eq('exam_sets.is_active', true)
+        .order('created_at', { ascending: true });
+
+      if (error) throw error;
+
+      if (data) {
+        const formattedQuestions: Question[] = data.map(item => ({
+          id: item.id,
+          section: item.section as 'listening' | 'grammar' | 'reading',
+          examSet: item.exam_set_id,
+          questionText: item.question_text,
+          options: item.options,
+          correctAnswer: item.correct_answer,
+          level: item.level as 'A1' | 'A2' | 'B1' | 'B2' | 'C1' | 'C2',
+          audioUrl: item.audio_url,
+          imageUrl: item.image_url,
+          createdBy: item.created_by,
+          createdAt: item.created_at,
+          updatedAt: item.updated_at,
+        }));
+
+        dispatch({ type: 'SET_QUESTIONS', payload: formattedQuestions });
+      }
+    } catch (error) {
+      console.error('Error loading questions:', error);
+    }
+  };
+
+  // Create new exam set
+  const createExamSet = async (examSetData: Omit<ExamSet, 'id' | 'createdAt' | 'updatedAt'>) => {
+    try {
+      const { data: userData } = await supabase.auth.getUser();
+      
+      const { data, error } = await supabase
+        .from('exam_sets')
+        .insert([{
+          name: examSetData.name,
+          description: examSetData.description,
+          is_active: examSetData.isActive,
+          is_premium: examSetData.isPremium || false,
+          difficulty_level: examSetData.difficultyLevel || 'mixed',
+          time_limit_minutes: examSetData.timeLimitMinutes || 90,
+          created_by: userData.user?.id,
+        }])
+        .select()
+        .single();
+
+      if (error) throw error;
+      
+      // Real-time will automatically update all clients
+      console.log('Exam set created:', data);
+    } catch (error) {
+      console.error('Error creating exam set:', error);
+      throw error;
+    }
+  };
+
+  // Create new question
+  const createQuestion = async (questionData: Omit<Question, 'id' | 'createdAt' | 'updatedAt'>) => {
+    try {
+      const { data: userData } = await supabase.auth.getUser();
+      
+      const { data, error } = await supabase
+        .from('questions')
+        .insert([{
+          exam_set_id: questionData.examSet,
+          section: questionData.section,
+          question_text: questionData.questionText,
+          options: questionData.options,
+          correct_answer: questionData.correctAnswer,
+          level: questionData.level,
+          audio_url: questionData.audioUrl,
+          image_url: questionData.imageUrl,
+          created_by: userData.user?.id,
+        }])
+        .select()
+        .single();
+
+      if (error) throw error;
+      
+      console.log('Question created:', data);
+    } catch (error) {
+      console.error('Error creating question:', error);
+      throw error;
+    }
+  };
+
+  // Update exam set
+  const updateExamSet = async (id: number, updates: Partial<ExamSet>) => {
+    try {
+      const { data, error } = await supabase
+        .from('exam_sets')
+        .update({
+          name: updates.name,
+          description: updates.description,
+          is_active: updates.isActive,
+          is_premium: updates.isPremium,
+          difficulty_level: updates.difficultyLevel,
+          time_limit_minutes: updates.timeLimitMinutes,
+        })
+        .eq('id', id)
+        .select()
+        .single();
+
+      if (error) throw error;
+      
+      console.log('Exam set updated:', data);
+    } catch (error) {
+      console.error('Error updating exam set:', error);
+      throw error;
+    }
+  };
+
+  // Update question
+  const updateQuestion = async (id: string, updates: Partial<Question>) => {
+    try {
+      const { data, error } = await supabase
+        .from('questions')
+        .update({
+          exam_set_id: updates.examSet,
+          section: updates.section,
+          question_text: updates.questionText,
+          options: updates.options,
+          correct_answer: updates.correctAnswer,
+          level: updates.level,
+          audio_url: updates.audioUrl,
+          image_url: updates.imageUrl,
+        })
+        .eq('id', id)
+        .select()
+        .single();
+
+      if (error) throw error;
+      
+      console.log('Question updated:', data);
+    } catch (error) {
+      console.error('Error updating question:', error);
+      throw error;
+    }
+  };
+
+  // Delete exam set
+  const deleteExamSet = async (id: number) => {
+    try {
+      const { error } = await supabase
+        .from('exam_sets')
+        .delete()
+        .eq('id', id);
+
+      if (error) throw error;
+      
+      console.log('Exam set deleted:', id);
+    } catch (error) {
+      console.error('Error deleting exam set:', error);
+      throw error;
+    }
+  };
+
+  // Delete question
+  const deleteQuestion = async (id: string) => {
+    try {
+      const { error } = await supabase
+        .from('questions')
+        .delete()
+        .eq('id', id);
+
+      if (error) throw error;
+      
+      console.log('Question deleted:', id);
+    } catch (error) {
+      console.error('Error deleting question:', error);
+      throw error;
+    }
+  };
+
+  // Load data on mount
+  React.useEffect(() => {
+    loadExamSets();
+    loadQuestions();
+  }, []);
   return (
-    <TestContext.Provider value={{ state, dispatch }}>
+    <TestContext.Provider value={{ 
+      state, 
+      dispatch,
+      loadExamSets,
+      loadQuestions,
+      createExamSet,
+      createQuestion,
+      updateExamSet,
+      updateQuestion,
+      deleteExamSet,
+      deleteQuestion
+    }}>
       {children}
     </TestContext.Provider>
   );

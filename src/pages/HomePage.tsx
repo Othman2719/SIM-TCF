@@ -11,13 +11,13 @@ const HomePage: React.FC = () => {
 
   // Redirect admins to admin panel
   React.useEffect(() => {
-    if (authState.currentUser?.role === 'admin') {
+    if (authState.currentUser?.role === 'admin' || authState.currentUser?.role === 'super_admin') {
       navigate('/admin');
     }
   }, [authState.currentUser, navigate]);
 
   // Don't render homepage for admins
-  if (authState.currentUser?.role === 'admin') {
+  if (authState.currentUser?.role === 'admin' || authState.currentUser?.role === 'super_admin') {
     return null;
   }
 
@@ -66,7 +66,7 @@ const HomePage: React.FC = () => {
               <div className="text-sm text-gray-600">
                 Bonjour, <span className="font-medium">{authState.currentUser?.username}</span>
               </div>
-              {authState.currentUser?.role === 'admin' && (
+              {(authState.currentUser?.role === 'admin' || authState.currentUser?.role === 'super_admin') && (
                 <button
                   onClick={() => navigate('/admin')}
                   className="px-4 py-2 text-sm text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"

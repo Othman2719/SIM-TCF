@@ -1,13 +1,16 @@
 import React, { createContext, useContext, useReducer, ReactNode, useEffect } from 'react';
+import { supabase } from '../lib/supabase';
 
 export interface User {
   id: string;
   username: string;
   email: string;
-  password: string;
-  role: 'admin' | 'client';
+  fullName?: string;
+  role: 'super_admin' | 'admin' | 'client';
   createdAt: string;
   isActive: boolean;
+  subscriptionType?: 'free' | 'premium' | 'enterprise';
+  subscriptionExpiresAt?: string | null;
 }
 
 export interface AuthState {
@@ -29,26 +32,7 @@ type AuthAction =
 
 const initialState: AuthState = {
   currentUser: null,
-  users: [
-    {
-      id: 'admin-1',
-      username: 'admin',
-      email: 'admin@tcf.com',
-      password: 'admin123',
-      role: 'admin',
-      createdAt: new Date().toISOString(),
-      isActive: true,
-    },
-    {
-      id: 'client-1',
-      username: 'client',
-      email: 'client@tcf.com',
-      password: 'client123',
-      role: 'client',
-      createdAt: new Date().toISOString(),
-      isActive: true,
-    }
-  ],
+  users: [],
   isAuthenticated: false,
   isLoading: false,
 };
@@ -128,65 +112,144 @@ const AuthContext = createContext<{
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [state, dispatch] = useReducer(authReducer, initialState);
 
-  // Load users from localStorage on mount
+  // Check for existing session on mount
   useEffect(() => {
-    const savedUsers = localStorage.getItem('tcf_users');
-    if (savedUsers) {
-      dispatch({ type: 'SET_USERS', payload: JSON.parse(savedUsers) });
-    }
-
-    const savedCurrentUser = localStorage.getItem('tcf_current_user');
-    if (savedCurrentUser) {
-      dispatch({ type: 'LOGIN_SUCCESS', payload: JSON.parse(savedCurrentUser) });
-    }
+    checkSession();
+    loadUsers();
   }, []);
 
-  // Save users to localStorage whenever users change
-  useEffect(() => {
-    localStorage.setItem('tcf_users', JSON.stringify(state.users));
-  }, [state.users]);
-
-  // Save current user to localStorage
-  useEffect(() => {
-    if (state.currentUser) {
-      localStorage.setItem('tcf_current_user', JSON.stringify(state.currentUser));
-    } else {
-      localStorage.removeItem('tcf_current_user');
+  const checkSession = async () => {
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session) {
+        await loadCurrentUser(session.user.id);
+      }
+    } catch (error) {
+      console.error('Error checking session:', error);
     }
-  }, [state.currentUser]);
+  };
 
-  const login = async (username: string, password: string): Promise<boolean> => {
+  const loadCurrentUser = async (userId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('users')
+        .select('*')
+        .eq('id', userId)
+        .single();
+
+      if (error) throw error;
+
+      if (data) {
+        const user: User = {
+          id: data.id,
+          username: data.username,
+          email: data.email,
+          fullName: data.full_name,
+          role: data.role,
+          isActive: data.is_active,
+          subscriptionType: data.subscription_type,
+          subscriptionExpiresAt: data.subscription_expires_at,
+          createdAt: data.created_at,
+        };
+        dispatch({ type: 'LOGIN_SUCCESS', payload: user });
+      }
+    } catch (error) {
+      console.error('Error loading current user:', error);
+    }
+  };
+
+  const loadUsers = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('users')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+
+      if (data) {
+        const users: User[] = data.map(item => ({
+          id: item.id,
+          username: item.username,
+          email: item.email,
+          fullName: item.full_name,
+          role: item.role,
+          isActive: item.is_active,
+          subscriptionType: item.subscription_type,
+          subscriptionExpiresAt: item.subscription_expires_at,
+          createdAt: item.created_at,
+        }));
+        dispatch({ type: 'SET_USERS', payload: users });
+      }
+    } catch (error) {
+      console.error('Error loading users:', error);
+    }
+  };
+
+  const login = async (email: string, password: string): Promise<boolean> => {
     dispatch({ type: 'SET_LOADING', payload: true });
 
-    // Simulate API call delay
-    await new Promise(resolve => setTimeout(resolve, 1000));
+    try {
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
 
-    const user = state.users.find(
-      u => (u.username === username || u.email === username) && 
-           u.password === password && 
-           u.isActive
-    );
+      if (error) throw error;
 
-    if (user) {
-      dispatch({ type: 'LOGIN_SUCCESS', payload: user });
-      return true;
-    } else {
+      if (data.user) {
+        await loadCurrentUser(data.user.id);
+        return true;
+      }
+    } catch (error) {
+      console.error('Login error:', error);
       dispatch({ type: 'SET_LOADING', payload: false });
-      return false;
+    }
+    
+    return false;
+  };
+
+  const logout = async () => {
+    try {
+      await supabase.auth.signOut();
+      dispatch({ type: 'LOGOUT' });
+    } catch (error) {
+      console.error('Logout error:', error);
     }
   };
 
-  const logout = () => {
-    dispatch({ type: 'LOGOUT' });
-  };
+  const createUser = async (userData: { email: string; password: string; username: string; role?: 'admin' | 'client' }) => {
+    try {
+      // Create auth user
+      const { data: authData, error: authError } = await supabase.auth.signUp({
+        email: userData.email,
+        password: userData.password,
+      });
 
-  const createUser = (userData: Omit<User, 'id' | 'createdAt'>) => {
-    const newUser: User = {
-      ...userData,
-      id: `user-${Date.now()}`,
-      createdAt: new Date().toISOString(),
-    };
-    dispatch({ type: 'ADD_USER', payload: newUser });
+      if (authError) throw authError;
+
+      if (authData.user) {
+        // Create user profile
+        const { error: profileError } = await supabase
+          .from('users')
+          .insert([{
+            id: authData.user.id,
+            email: userData.email,
+            username: userData.username,
+            role: userData.role || 'client',
+            is_active: true,
+          }]);
+
+        if (profileError) throw profileError;
+
+        await loadUsers();
+        return true;
+      }
+    } catch (error) {
+      console.error('Error creating user:', error);
+      throw error;
+    }
+    return false;
   };
 
   return (
