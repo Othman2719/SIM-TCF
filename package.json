@@ -8,7 +8,7 @@
     "build": "vite build",
     "lint": "eslint .",
     "preview": "vite preview",
-    "build:namecheap": "node build-for-namecheap.js",
+    "build:namecheap": "node build-for-namecheap.cjs",
     "deploy:prepare": "npm run build:namecheap"
   },
   "dependencies": {
