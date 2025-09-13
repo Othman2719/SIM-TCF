@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTest } from '../contexts/TestContext';
 import { useAuth } from '../contexts/AuthContext';
+import { supabase } from '../lib/supabase';
 import { Plus, Edit2, Trash2, Upload, Home, Save, FolderPlus, Folder } from 'lucide-react';
 import { Question, ExamSet } from '../contexts/TestContext';
 
@@ -38,24 +39,51 @@ const AdminPanel: React.FC = () => {
       return;
     }
 
-    const newQuestion: Question = {
-      id: `${activeTab}_${Date.now()}`,
-      section: activeTab,
-      examSet: selectedExamSet,
-      questionText: formData.questionText,
-      options: formData.options,
-      correctAnswer: formData.correctAnswer,
-      level: 'A1' as Question['level'], // Default level
-      audioUrl: formData.audioFile ? URL.createObjectURL(formData.audioFile) : undefined,
-      imageUrl: formData.imageFile ? URL.createObjectURL(formData.imageFile) : undefined,
-    };
-
-    dispatch({ type: 'SET_QUESTIONS', payload: [...state.questions, newQuestion] });
-    resetForm();
-    setShowAddForm(false);
-    alert('Question ajoutée avec succès ! Elle est maintenant disponible pour tous les utilisateurs.');
+    addQuestionToDatabase();
   };
 
+  const addQuestionToDatabase = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('questions')
+        .insert({
+          section: activeTab,
+          exam_set_id: selectedExamSet,
+          question_text: formData.questionText,
+          options: formData.options,
+          correct_answer: formData.correctAnswer,
+          level: 'A1',
+          audio_url: formData.audioFile ? URL.createObjectURL(formData.audioFile) : null,
+          image_url: formData.imageFile ? URL.createObjectURL(formData.imageFile) : null,
+          created_by: state.currentUser?.id,
+        })
+        .select()
+        .single();
+      
+      if (error) throw error;
+      
+      // Add to local state
+      const newQuestion: Question = {
+        id: data.id,
+        section: activeTab,
+        examSet: selectedExamSet,
+        questionText: formData.questionText,
+        options: formData.options,
+        correctAnswer: formData.correctAnswer,
+        level: 'A1',
+        audioUrl: formData.audioFile ? URL.createObjectURL(formData.audioFile) : undefined,
+        imageUrl: formData.imageFile ? URL.createObjectURL(formData.imageFile) : undefined,
+      };
+      
+      dispatch({ type: 'SET_QUESTIONS', payload: [...state.questions, newQuestion] });
+      resetForm();
+      setShowAddForm(false);
+      alert('Question ajoutée avec succès ! Elle est maintenant disponible pour tous les utilisateurs.');
+    } catch (error) {
+      console.error('Error adding question:', error);
+      alert('Erreur lors de l\'ajout de la question');
+    }
+  };
   const handleEditQuestion = (question: Question) => {
     setEditingQuestion(question);
     setFormData({
@@ -106,20 +134,41 @@ const AdminPanel: React.FC = () => {
       return;
     }
 
-    const newExamSet: ExamSet = {
-      id: Math.max(...state.examSets.map(e => e.id), 0) + 1,
-      name: examFormData.name,
-      description: examFormData.description,
-      totalQuestions: 0,
-      isActive: examFormData.isActive,
-    };
-
-    dispatch({ type: 'SET_EXAM_SETS', payload: [...state.examSets, newExamSet] });
-    resetExamForm();
-    setShowExamForm(false);
-    alert('Nouvel examen créé avec succès !');
+    addExamSetToDatabase();
   };
 
+  const addExamSetToDatabase = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('exam_sets')
+        .insert({
+          name: examFormData.name,
+          description: examFormData.description,
+          is_active: examFormData.isActive,
+          created_by: state.currentUser?.id,
+        })
+        .select()
+        .single();
+      
+      if (error) throw error;
+      
+      const newExamSet: ExamSet = {
+        id: data.id,
+        name: examFormData.name,
+        description: examFormData.description,
+        totalQuestions: 0,
+        isActive: examFormData.isActive,
+      };
+      
+      dispatch({ type: 'SET_EXAM_SETS', payload: [...state.examSets, newExamSet] });
+      resetExamForm();
+      setShowExamForm(false);
+      alert('Nouvel examen créé avec succès !');
+    } catch (error) {
+      console.error('Error adding exam set:', error);
+      alert('Erreur lors de la création de l\'examen');
+    }
+  };
   const handleUpdateExamSet = () => {
     if (!editingExam) return;
 
