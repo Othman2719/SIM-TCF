@@ -1,6 +1,5 @@
 import React, { createContext, useContext, useReducer, ReactNode } from 'react';
-import { supabase } from '../lib/supabase';
-import { useAuth } from './AuthContext';
+import { mockQuestions } from '../data/mockQuestions';
 
 export interface Question {
   id: string;
@@ -60,12 +59,17 @@ const initialState: TestState = {
   timeRemaining: 90 * 60, // 90 minutes in seconds
   testStarted: false,
   testCompleted: false,
-  questions: [],
+  questions: mockQuestions,
   currentExamSet: 1,
   audioPlayed: {},
   score: 0,
   level: 'A1',
-  examSets: [],
+  examSets: [
+    { id: 1, name: 'TCF - Examen Principal', description: 'Examen principal du Test de Connaissance du Français avec questions de tous niveaux', totalQuestions: 70, isActive: true },
+    { id: 2, name: 'TCF - Examen 2', description: 'Deuxième examen du Test de Connaissance du Français', totalQuestions: 10, isActive: false },
+    { id: 3, name: 'TCF - Examen 3', description: 'Troisième examen du Test de Connaissance du Français', totalQuestions: 10, isActive: false },
+    { id: 4, name: 'TCF - Examen 4', description: 'Quatrième examen du Test de Connaissance du Français', totalQuestions: 5, isActive: false },
+  ],
   selectedExamSet: null,
 };
 
@@ -222,154 +226,14 @@ const TestContext = createContext<{
 } | undefined>(undefined);
 
 export function TestProvider({ children }: { children: ReactNode }) {
-  const [state, dispatch] = useReducer(testReducer, initialState);
-  const { state: authState } = useAuth();
+  const [state, dispatch] = useReducer(testReducer, {
+    ...initialState,
+    questions: loadFromStorage('tcf_questions', mockQuestions),
+    examSets: loadFromStorage('tcf_exam_sets', initialState.examSets),
+  });
 
-  // Load data from Supabase
-  React.useEffect(() => {
-    if (authState.isAuthenticated) {
-      loadExamSets();
-      loadQuestions();
-      loadUserProgress();
-    }
-  }, [authState.isAuthenticated]);
-
-  const loadExamSets = async () => {
-    try {
-      const { data, error } = await supabase
-        .from('exam_sets')
-        .select('*')
-        .eq('is_active', true)
-        .order('id');
-      
-      if (error) throw error;
-      
-      const examSets: ExamSet[] = data.map(item => ({
-        id: item.id,
-        name: item.name,
-        description: item.description,
-        totalQuestions: 0, // Will be calculated
-        isActive: item.is_active,
-      }));
-      
-      dispatch({ type: 'SET_EXAM_SETS', payload: examSets });
-    } catch (error) {
-      console.error('Error loading exam sets:', error);
-    }
-  };
-
-  const loadQuestions = async () => {
-    try {
-      const { data, error } = await supabase
-        .from('questions')
-        .select('*')
-        .order('created_at');
-      
-      if (error) throw error;
-      
-      const questions: Question[] = data.map(item => ({
-        id: item.id,
-        section: item.section as 'listening' | 'grammar' | 'reading',
-        examSet: item.exam_set_id || 1,
-        questionText: item.question_text,
-        options: item.options,
-        correctAnswer: item.correct_answer,
-        level: item.level as 'A1' | 'A2' | 'B1' | 'B2' | 'C1' | 'C2',
-        audioUrl: item.audio_url || undefined,
-        imageUrl: item.image_url || undefined,
-      }));
-      
-      dispatch({ type: 'SET_QUESTIONS', payload: questions });
-    } catch (error) {
-      console.error('Error loading questions:', error);
-    }
-  };
-
-  const loadUserProgress = async () => {
-    if (!authState.currentUser) return;
-    
-    try {
-      // Load incomplete test session
-      const { data: sessions, error } = await supabase
-        .from('test_sessions')
-        .select('*')
-        .eq('user_id', authState.currentUser.id)
-        .eq('status', 'in_progress')
-        .order('created_at', { ascending: false })
-        .limit(1);
-      
-      if (error) throw error;
-      
-      if (sessions && sessions.length > 0) {
-        const session = sessions[0];
-        // Restore test session
-        dispatch({ type: 'START_TEST', payload: session.exam_set_id });
-        dispatch({ type: 'SET_SECTION', payload: session.current_section as any });
-        // Set other session data...
-      }
-    } catch (error) {
-      console.error('Error loading user progress:', error);
-    }
-  };
-
-  const saveTestSession = async () => {
-    if (!authState.currentUser || !state.testStarted) return;
-    
-    try {
-      const { error } = await supabase
-        .from('test_sessions')
-        .upsert({
-          user_id: authState.currentUser.id,
-          exam_set_id: state.currentExamSet,
-          status: state.testCompleted ? 'completed' : 'in_progress',
-          time_remaining: state.timeRemaining,
-          current_section: state.currentSection,
-          current_question_index: state.currentQuestionIndex,
-        });
-      
-      if (error) throw error;
-    } catch (error) {
-      console.error('Error saving test session:', error);
-    }
-  };
-
-  const saveAnswer = async (questionId: string, answer: number) => {
-    if (!authState.currentUser) return;
-    
-    try {
-      const question = state.questions.find(q => q.id === questionId);
-      const isCorrect = question ? question.correctAnswer === answer : false;
-      
-      const { error } = await supabase
-        .from('test_answers')
-        .upsert({
-          session_id: 'current-session', // You'll need to track session ID
-          question_id: questionId,
-          selected_answer: answer,
-          is_correct: isCorrect,
-        });
-      
-      if (error) throw error;
-    } catch (error) {
-      console.error('Error saving answer:', error);
-    }
-  };
-
-  // Auto-save progress
-  React.useEffect(() => {
-    if (state.testStarted && !state.testCompleted) {
-      const interval = setInterval(saveTestSession, 30000); // Save every 30 seconds
-      return () => clearInterval(interval);
-    }
-  }, [state.testStarted, state.testCompleted, state.timeRemaining]);
   return (
-    <TestContext.Provider value={{ 
-      state, 
-      dispatch,
-      saveAnswer,
-      loadExamSets,
-      loadQuestions 
-    }}>
+    <TestContext.Provider value={{ state, dispatch }}>
       {children}
     </TestContext.Provider>
   );
