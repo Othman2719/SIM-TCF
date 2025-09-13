@@ -1,4 +1,4 @@
-import { showSaveDialog, showMessageBox, isElectron } from './electronUtils';
+import jsPDF from 'jspdf';
 
 export interface CertificateData {
   userName: string;
@@ -12,111 +12,182 @@ export interface CertificateData {
   date: string;
 }
 
-export const downloadCertificatePDF = async (data: CertificateData): Promise<void> => {
-  if (isElectron()) {
-    // Electron-specific save dialog
-    const result = await showSaveDialog();
-    if (!result.canceled && result.filePath) {
-      // Here you would implement actual PDF generation and saving
-      await showMessageBox({
-        type: 'info',
-        title: 'Certificat sauvegardé',
-        message: `Le certificat a été sauvegardé avec succès !`,
-        detail: `Fichier: ${result.filePath}`
-      });
-    }
-  } else {
-    // Web fallback
-    console.log('Downloading certificate PDF for:', data.userName);
-    alert('Fonctionnalité de téléchargement PDF en cours de développement');
-  }
+export const generateCertificatePDF = (data: CertificateData): jsPDF => {
+  const pdf = new jsPDF('p', 'mm', 'a4');
+  const pageWidth = pdf.internal.pageSize.getWidth();
+  const pageHeight = pdf.internal.pageSize.getHeight();
+
+  // Colors
+  const blueColor = [0, 84, 164]; // RGB for blue
+  const purpleColor = [102, 51, 153]; // RGB for purple
+  const redColor = [239, 65, 54]; // RGB for red
+  const grayColor = [128, 128, 128]; // RGB for gray
+
+  // Header - French Republic Block
+  pdf.setFillColor(blueColor[0], blueColor[1], blueColor[2]);
+  pdf.rect(15, 15, 45, 25, 'F');
+  
+  pdf.setTextColor(255, 255, 255);
+  pdf.setFontSize(10);
+  pdf.setFont('helvetica', 'bold');
+  pdf.text('RÉPUBLIQUE', 17, 25);
+  pdf.text('FRANÇAISE', 17, 30);
+  
+  pdf.setFontSize(7);
+  pdf.setFont('helvetica', 'normal');
+  pdf.text('Liberté', 17, 35);
+  pdf.text('Égalité', 17, 37);
+  pdf.text('Fraternité', 17, 39);
+
+  // France Education International
+  pdf.setTextColor(blueColor[0], blueColor[1], blueColor[2]);
+  pdf.setFontSize(12);
+  pdf.setFont('helvetica', 'bold');
+  pdf.text('FRANCE', pageWidth/2 - 15, 25, { align: 'center' });
+  pdf.text('ÉDUCATION', pageWidth/2 - 15, 30, { align: 'center' });
+  
+  pdf.setTextColor(grayColor[0], grayColor[1], grayColor[2]);
+  pdf.setFontSize(10);
+  pdf.text('INTERNATIONAL', pageWidth/2 - 15, 35, { align: 'center' });
+
+  // TCF Logo
+  pdf.setTextColor(redColor[0], redColor[1], redColor[2]);
+  pdf.setFontSize(28);
+  pdf.setFont('helvetica', 'bold');
+  pdf.text('TCF', pageWidth - 30, 35);
+
+  // Title
+  pdf.setTextColor(purpleColor[0], purpleColor[1], purpleColor[2]);
+  pdf.setFontSize(24);
+  pdf.setFont('helvetica', 'bold');
+  pdf.text('Attestation TCF', pageWidth/2, 70, { align: 'center' });
+
+  // Personal Information
+  pdf.setTextColor(0, 0, 0);
+  pdf.setFontSize(14);
+  pdf.setFont('helvetica', 'normal');
+  
+  const personalInfoY = 100;
+  const labelX = 20;
+  const valueX = 50;
+  
+  pdf.text('Nom:', labelX, personalInfoY);
+  pdf.setFont('helvetica', 'bold');
+  pdf.text(data.userName.toUpperCase(), valueX, personalInfoY);
+  
+  pdf.setFont('helvetica', 'normal');
+  pdf.text('Prénom:', labelX, personalInfoY + 15);
+  pdf.setFont('helvetica', 'bold');
+  pdf.text(data.userEmail.split('@')[0], valueX, personalInfoY + 15);
+  
+  pdf.setFont('helvetica', 'normal');
+  pdf.text('N° de certificat:', labelX, personalInfoY + 30);
+  pdf.setFont('helvetica', 'bold');
+  pdf.text(data.certificateNumber, valueX + 50, personalInfoY + 30);
+  
+  pdf.setFont('helvetica', 'normal');
+  pdf.text('Date:', labelX, personalInfoY + 45);
+  pdf.setFont('helvetica', 'bold');
+  pdf.text(data.date, valueX, personalInfoY + 45);
+
+  // Results Table Title
+  pdf.setTextColor(purpleColor[0], purpleColor[1], purpleColor[2]);
+  pdf.setFontSize(16);
+  pdf.setFont('helvetica', 'bold');
+  pdf.text('Résultats des épreuves', 20, 180);
+
+  // Table Header
+  const tableY = 190;
+  const tableHeight = 12;
+  
+  pdf.setFillColor(purpleColor[0], purpleColor[1], purpleColor[2]);
+  pdf.rect(20, tableY, pageWidth - 40, tableHeight, 'F');
+  
+  pdf.setTextColor(255, 255, 255);
+  pdf.setFontSize(12);
+  pdf.setFont('helvetica', 'bold');
+  pdf.text('Épreuve', 25, tableY + 8);
+  pdf.text('Score', pageWidth/2 - 10, tableY + 8, { align: 'center' });
+  pdf.text('Niveau', pageWidth - 50, tableY + 8, { align: 'center' });
+
+  // Table Rows
+  pdf.setTextColor(0, 0, 0);
+  pdf.setFontSize(12);
+  pdf.setFont('helvetica', 'normal');
+  
+  const rowHeight = 15;
+  let currentY = tableY + tableHeight + 5;
+  
+  // Row 1 - Listening
+  pdf.rect(20, currentY, pageWidth - 40, rowHeight);
+  pdf.text('Compréhension orale', 25, currentY + 10);
+  pdf.text(`${data.listeningScore} pts`, pageWidth/2 - 10, currentY + 10, { align: 'center' });
+  pdf.text(data.level, pageWidth - 50, currentY + 10, { align: 'center' });
+  
+  currentY += rowHeight;
+  
+  // Row 2 - Grammar
+  pdf.rect(20, currentY, pageWidth - 40, rowHeight);
+  pdf.text('Maîtrise des structures de la langue', 25, currentY + 10);
+  pdf.text(`${data.grammarScore} pts`, pageWidth/2 - 10, currentY + 10, { align: 'center' });
+  pdf.text(data.level, pageWidth - 50, currentY + 10, { align: 'center' });
+  
+  currentY += rowHeight;
+  
+  // Row 3 - Reading
+  pdf.rect(20, currentY, pageWidth - 40, rowHeight);
+  pdf.text('Compréhension écrite', 25, currentY + 10);
+  pdf.text(`${data.readingScore} pts`, pageWidth/2 - 10, currentY + 10, { align: 'center' });
+  pdf.text(data.level, pageWidth - 50, currentY + 10, { align: 'center' });
+  
+  currentY += rowHeight;
+  
+  // Total Row
+  pdf.setFillColor(240, 240, 240);
+  pdf.rect(20, currentY, pageWidth - 40, rowHeight, 'F');
+  pdf.setFont('helvetica', 'bold');
+  pdf.setTextColor(purpleColor[0], purpleColor[1], purpleColor[2]);
+  pdf.text('Score Global', 25, currentY + 10);
+  pdf.text(`${data.score} / 699 pts`, pageWidth/2 - 10, currentY + 10, { align: 'center' });
+  pdf.text(data.level, pageWidth - 50, currentY + 10, { align: 'center' });
+
+  // Footer - Brixel Academy
+  const footerY = pageHeight - 60;
+  
+  pdf.setTextColor(purpleColor[0], purpleColor[1], purpleColor[2]);
+  pdf.setFontSize(18);
+  pdf.setFont('helvetica', 'bold');
+  pdf.text('BRIXEL', pageWidth/2, footerY, { align: 'center' });
+  pdf.text('ACADEMY', pageWidth/2, footerY + 10, { align: 'center' });
+  
+  pdf.setTextColor(grayColor[0], grayColor[1], grayColor[2]);
+  pdf.setFontSize(10);
+  pdf.setFont('helvetica', 'normal');
+  pdf.text('Ce certificat est délivré par', pageWidth/2, footerY + 25, { align: 'center' });
+  
+  pdf.setFontSize(12);
+  pdf.setFont('helvetica', 'bold');
+  pdf.setTextColor(0, 0, 0);
+  pdf.text('Brixel Academy', pageWidth/2, footerY + 35, { align: 'center' });
+
+  return pdf;
 };
 
-export const printCertificatePDF = (data: CertificateData): void => {
-  // Placeholder implementation for PDF printing
-  console.log('Printing certificate PDF for:', data.userName);
+export const downloadCertificatePDF = (data: CertificateData) => {
+  const pdf = generateCertificatePDF(data);
+  const fileName = `Certificat_TCF_${data.userName}_${data.certificateNumber}.pdf`;
+  pdf.save(fileName);
+};
+
+export const printCertificatePDF = (data: CertificateData) => {
+  const pdf = generateCertificatePDF(data);
+  const pdfBlob = pdf.output('blob');
+  const pdfUrl = URL.createObjectURL(pdfBlob);
   
-  // Create a simple printable certificate
-  const printWindow = window.open('', '_blank');
+  const printWindow = window.open(pdfUrl);
   if (printWindow) {
-    printWindow.document.write(`
-      <!DOCTYPE html>
-      <html>
-        <head>
-          <title>Certificat TCF - ${data.userName}</title>
-          <style>
-            body {
-              font-family: Arial, sans-serif;
-              max-width: 800px;
-              margin: 0 auto;
-              padding: 40px;
-              text-align: center;
-            }
-            .certificate {
-              border: 3px solid #2563eb;
-              padding: 40px;
-              margin: 20px 0;
-            }
-            .header {
-              color: #2563eb;
-              font-size: 28px;
-              font-weight: bold;
-              margin-bottom: 20px;
-            }
-            .recipient {
-              font-size: 24px;
-              margin: 30px 0;
-              color: #1f2937;
-            }
-            .score {
-              font-size: 20px;
-              color: #059669;
-              font-weight: bold;
-              margin: 20px 0;
-            }
-            .details {
-              margin: 30px 0;
-              text-align: left;
-            }
-            .footer {
-              margin-top: 40px;
-              font-size: 14px;
-              color: #6b7280;
-            }
-          </style>
-        </head>
-        <body>
-          <div class="certificate">
-            <div class="header">CERTIFICAT TCF</div>
-            <div class="header" style="font-size: 18px;">Test de Connaissance du Français</div>
-            
-            <div class="recipient">
-              Certifie que<br>
-              <strong>${data.userName}</strong><br>
-              a obtenu le niveau <strong>${data.level}</strong>
-            </div>
-            
-            <div class="score">
-              Score: ${data.score} points sur 699
-            </div>
-            
-            <div class="details">
-              <strong>Détail des scores par section:</strong><br>
-              • Compréhension Orale: ${data.listeningScore} points<br>
-              • Structures de la Langue: ${data.grammarScore} points<br>
-              • Compréhension Écrite: ${data.readingScore} points
-            </div>
-            
-            <div class="footer">
-              Certificat N°: ${data.certificateNumber}<br>
-              Délivré le: ${data.date}<br>
-              Brixel Academy - Simulateur TCF
-            </div>
-          </div>
-        </body>
-      </html>
-    `);
-    printWindow.document.close();
-    printWindow.print();
+    printWindow.onload = () => {
+      printWindow.print();
+    };
   }
 };
