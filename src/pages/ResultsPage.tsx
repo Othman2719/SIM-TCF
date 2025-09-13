@@ -10,18 +10,6 @@ const ResultsPage: React.FC = () => {
   const { state: authState } = useAuth();
   const navigate = useNavigate();
 
-  // Save user progress when results are displayed
-  React.useEffect(() => {
-    if (authState.currentUser && state.testCompleted) {
-      dispatch({ 
-        type: 'SAVE_USER_PROGRESS', 
-        payload: { 
-          userId: authState.currentUser.id, 
-          examId: state.currentExamSet 
-        } 
-      });
-    }
-  }, [authState.currentUser, state.testCompleted, state.currentExamSet, dispatch]);
   const handleReturnHome = () => {
     dispatch({ type: 'RESET_TEST' });
     navigate('/');
@@ -117,11 +105,6 @@ const ResultsPage: React.FC = () => {
   });
 
   const globalPercentage = totalQuestions > 0 ? Math.round((correctAnswers / totalQuestions) * 100) : 0;
-
-  // Check if next exam is unlocked
-  const nextExamId = state.currentExamSet + 1;
-  const nextExam = state.examSets.find(exam => exam.id === nextExamId);
-  const isNextExamUnlocked = nextExam?.isActive;
 
   return (
     <div className="min-h-screen bg-gray-100">
@@ -354,18 +337,6 @@ const ResultsPage: React.FC = () => {
 
         {/* Action Buttons */}
         <div className="text-center mt-8 print:hidden">
-          {/* Next Exam Unlocked Message */}
-          {isNextExamUnlocked && nextExam && (
-            <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-6">
-              <div className="flex items-center justify-center space-x-2 text-green-700">
-                <CheckCircle className="w-5 h-5" />
-                <p className="font-medium">
-                  Félicitations ! Vous avez débloqué l'examen suivant : {nextExam.name}
-                </p>
-              </div>
-            </div>
-          )}
-          
           <div className="flex justify-center space-x-4">
             <button
               onClick={handleRetakeTest}
@@ -373,18 +344,6 @@ const ResultsPage: React.FC = () => {
             >
               Refaire le Test
             </button>
-            {isNextExamUnlocked && nextExam && (
-              <button
-                onClick={() => {
-                  dispatch({ type: 'RESET_TEST' });
-                  dispatch({ type: 'SELECT_EXAM_SET', payload: nextExamId });
-                  navigate('/');
-                }}
-                className="bg-green-600 hover:bg-green-700 text-white px-8 py-3 rounded-lg font-semibold transition-colors"
-              >
-                Examen Suivant
-              </button>
-            )}
             <button
               onClick={handleReturnHome}
               className="bg-gray-600 hover:bg-gray-700 text-white px-8 py-3 rounded-lg font-semibold transition-colors"

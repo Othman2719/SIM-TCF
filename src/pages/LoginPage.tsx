@@ -21,14 +21,12 @@ const LoginPage: React.FC = () => {
       return;
     }
 
-    // Try to login with email or username
-    const loginIdentifier = formData.username.includes('@') ? formData.username : `${formData.username}@tcf.com`;
-    const success = await login(loginIdentifier, formData.password);
+    const success = await login(formData.username, formData.password);
     
     if (success) {
       navigate('/');
     } else {
-      setError('Email ou mot de passe incorrect');
+      setError('Nom d\'utilisateur ou mot de passe incorrect');
     }
   };
 
@@ -117,10 +115,10 @@ const LoginPage: React.FC = () => {
 
         {/* Demo Credentials */}
         <div className="mt-8 p-4 bg-gray-50 rounded-lg">
-          <h3 className="text-sm font-medium text-gray-700 mb-2">Pour tester:</h3>
+          <h3 className="text-sm font-medium text-gray-700 mb-2">Comptes de démonstration:</h3>
           <div className="text-xs text-gray-600 space-y-1">
-            <p>Créez un compte ou connectez-vous avec Supabase</p>
-            <p>Les admins peuvent créer des tests visibles par tous</p>
+            <p><strong>Admin:</strong> admin / admin123</p>
+            <p><strong>Client:</strong> client / client123</p>
           </div>
         </div>
       </div>

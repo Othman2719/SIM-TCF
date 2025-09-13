@@ -1,16 +1,13 @@
 import React, { createContext, useContext, useReducer, ReactNode, useEffect } from 'react';
-import { supabase, isSupabaseConfigured } from '../lib/supabase';
 
 export interface User {
   id: string;
   username: string;
   email: string;
-  fullName?: string;
-  role: 'super_admin' | 'admin' | 'client';
+  password: string;
+  role: 'admin' | 'client';
   createdAt: string;
   isActive: boolean;
-  subscriptionType?: 'free' | 'premium' | 'enterprise';
-  subscriptionExpiresAt?: string | null;
 }
 
 export interface AuthState {
@@ -34,14 +31,22 @@ const initialState: AuthState = {
   currentUser: null,
   users: [
     {
-      id: 'admin-othman-bouagada',
-      username: 'Othman Bouagada',
-      email: 'bouagada@brixelacademy.com',
-      fullName: 'Othman Bouagada',
-      role: 'super_admin',
-      isActive: true,
-      subscriptionType: 'enterprise',
+      id: 'admin-1',
+      username: 'admin',
+      email: 'admin@tcf.com',
+      password: 'admin123',
+      role: 'admin',
       createdAt: new Date().toISOString(),
+      isActive: true,
+    },
+    {
+      id: 'client-1',
+      username: 'client',
+      email: 'client@tcf.com',
+      password: 'client123',
+      role: 'client',
+      createdAt: new Date().toISOString(),
+      isActive: true,
     }
   ],
   isAuthenticated: false,
@@ -123,208 +128,65 @@ const AuthContext = createContext<{
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [state, dispatch] = useReducer(authReducer, initialState);
 
-  // Check for existing session on mount
+  // Load users from localStorage on mount
   useEffect(() => {
-    checkSession();
-    loadUsers();
+    const savedUsers = localStorage.getItem('tcf_users');
+    if (savedUsers) {
+      dispatch({ type: 'SET_USERS', payload: JSON.parse(savedUsers) });
+    }
+
+    const savedCurrentUser = localStorage.getItem('tcf_current_user');
+    if (savedCurrentUser) {
+      dispatch({ type: 'LOGIN_SUCCESS', payload: JSON.parse(savedCurrentUser) });
+    }
   }, []);
 
-  const checkSession = async () => {
-    try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (session) {
-        await loadCurrentUser(session.user.id);
-      }
-    } catch (error) {
-      console.error('Error checking session:', error);
+  // Save users to localStorage whenever users change
+  useEffect(() => {
+    localStorage.setItem('tcf_users', JSON.stringify(state.users));
+  }, [state.users]);
+
+  // Save current user to localStorage
+  useEffect(() => {
+    if (state.currentUser) {
+      localStorage.setItem('tcf_current_user', JSON.stringify(state.currentUser));
+    } else {
+      localStorage.removeItem('tcf_current_user');
     }
-  };
+  }, [state.currentUser]);
 
-  const loadCurrentUser = async (userId: string) => {
-    try {
-      const { data, error } = await supabase
-        .from('users')
-        .select('*')
-        .eq('id', userId)
-        .single();
-
-      if (error) throw error;
-
-      if (data) {
-        const user: User = {
-          id: data.id,
-          username: data.username,
-          email: data.email,
-          fullName: data.full_name,
-          role: data.role,
-          isActive: data.is_active,
-          subscriptionType: data.subscription_type,
-          subscriptionExpiresAt: data.subscription_expires_at,
-          createdAt: data.created_at,
-        };
-        dispatch({ type: 'LOGIN_SUCCESS', payload: user });
-      }
-    } catch (error) {
-      console.error('Error loading current user:', error);
-    }
-  };
-
-  const loadUsers = async () => {
-    try {
-      // Check if Supabase is properly configured before making requests
-      if (!isSupabaseConfigured()) {
-        console.warn('⚠️ Supabase not configured. Skipping user data load.');
-        console.warn('The app will work in demo mode until Supabase is properly set up.');
-        return;
-      }
-
-      const { data, error } = await supabase
-        .from('users')
-        .select('*')
-        .order('created_at', { ascending: false });
-
-      if (error) throw error;
-
-      if (data) {
-        const users: User[] = data.map(item => ({
-          id: item.id,
-          username: item.username,
-          email: item.email,
-          fullName: item.full_name,
-          role: item.role,
-          isActive: item.is_active,
-          subscriptionType: item.subscription_type,
-          subscriptionExpiresAt: item.subscription_expires_at,
-          createdAt: item.created_at,
-        }));
-        dispatch({ type: 'SET_USERS', payload: users });
-      }
-    } catch (error) {
-      if (error instanceof TypeError && error.message.includes('Failed to fetch')) {
-        console.error('🚨 SUPABASE CONNECTION FAILED 🚨');
-        console.error('Cannot connect to Supabase. Please check:');
-        console.error('1. Your internet connection');
-        console.error('2. Your .env file has correct Supabase credentials');
-        console.error('3. Your Supabase project is active');
-        console.error('');
-        console.error('The app will continue in demo mode.');
-      } else {
-        console.error('Error loading users:', error);
-      }
-    }
-  };
-
-  const login = async (email: string, password: string): Promise<boolean> => {
+  const login = async (username: string, password: string): Promise<boolean> => {
     dispatch({ type: 'SET_LOADING', payload: true });
 
-    if (!isSupabaseConfigured()) {
-      // Demo mode - allow login with any credentials
-      console.warn('⚠️ Supabase not configured. Running in demo mode.');
-      
-      // Check if this is the admin user
-      if (email === 'bouagada@brixelacademy.com' && password === 'Mostaganem@27') {
-        const adminUser: User = {
-          id: 'admin-othman-bouagada',
-          username: 'Othman Bouagada',
-          email: 'bouagada@brixelacademy.com',
-          fullName: 'Othman Bouagada',
-          role: 'super_admin',
-          isActive: true,
-          subscriptionType: 'enterprise',
-          createdAt: new Date().toISOString(),
-        };
-        dispatch({ type: 'LOGIN_SUCCESS', payload: adminUser });
-        dispatch({ type: 'SET_LOADING', payload: false });
-        return true;
-      }
-      
-      // Create a demo user for other credentials
-      const demoUser: User = {
-        id: 'demo-user-' + Date.now(),
-        username: email.split('@')[0] || 'demo',
-        email: email,
-        role: email.includes('admin') ? 'admin' : 'client',
-        isActive: true,
-        createdAt: new Date().toISOString(),
-      };
-      
-      dispatch({ type: 'LOGIN_SUCCESS', payload: demoUser });
-      dispatch({ type: 'SET_LOADING', payload: false });
+    // Simulate API call delay
+    await new Promise(resolve => setTimeout(resolve, 1000));
+
+    const user = state.users.find(
+      u => (u.username === username || u.email === username) && 
+           u.password === password && 
+           u.isActive
+    );
+
+    if (user) {
+      dispatch({ type: 'LOGIN_SUCCESS', payload: user });
       return true;
-    }
-
-    try {
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      });
-
-      if (error) throw error;
-
-      if (data.user) {
-        await loadCurrentUser(data.user.id);
-        return true;
-      }
-    } catch (error) {
-      if (error instanceof TypeError && error.message.includes('Failed to fetch')) {
-        console.error('🚨 LOGIN FAILED - SUPABASE CONNECTION ERROR 🚨');
-        console.error('Cannot connect to Supabase for authentication.');
-      } else {
-        console.error('Login error:', error);
-      }
+    } else {
       dispatch({ type: 'SET_LOADING', payload: false });
-    }
-    
-    return false;
-  };
-
-  const logout = async () => {
-    try {
-      await supabase.auth.signOut();
-      dispatch({ type: 'LOGOUT' });
-    } catch (error) {
-      console.error('Logout error:', error);
+      return false;
     }
   };
 
-  const createUser = async (userData: { email: string; password: string; username: string; role?: 'admin' | 'client' }) => {
-    if (!isSupabaseConfigured()) {
-      throw new Error('🚨 DATABASE REQUIRED\n\nTo create users that persist across sessions, you need to:\n\n1. Set up Supabase database\n2. Configure your .env file\n3. Restart the server\n\nSee console for setup instructions.');
-    }
+  const logout = () => {
+    dispatch({ type: 'LOGOUT' });
+  };
 
-    try {
-      // Create auth user
-      const { data: authData, error: authError } = await supabase.auth.signUp({
-        email: userData.email,
-        password: userData.password,
-      });
-
-      if (authError) throw authError;
-
-      if (authData.user) {
-        // Create user profile
-        const { error: profileError } = await supabase
-          .from('users')
-          .insert([{
-            id: authData.user.id,
-            email: userData.email,
-            username: userData.username,
-            role: userData.role || 'client',
-            is_active: true,
-          }]);
-
-        if (profileError) throw profileError;
-
-        await loadUsers();
-        console.log('✅ User created in database:', userData.username);
-        console.log('🔄 User can now login from any device');
-        return true;
-      }
-    } catch (error) {
-      console.error('Error creating user:', error);
-      throw error;
-    }
-    return false;
+  const createUser = (userData: Omit<User, 'id' | 'createdAt'>) => {
+    const newUser: User = {
+      ...userData,
+      id: `user-${Date.now()}`,
+      createdAt: new Date().toISOString(),
+    };
+    dispatch({ type: 'ADD_USER', payload: newUser });
   };
 
   return (

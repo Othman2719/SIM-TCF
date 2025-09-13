@@ -11,13 +11,13 @@ const HomePage: React.FC = () => {
 
   // Redirect admins to admin panel
   React.useEffect(() => {
-    if (authState.currentUser?.role === 'admin' || authState.currentUser?.role === 'super_admin') {
+    if (authState.currentUser?.role === 'admin') {
       navigate('/admin');
     }
   }, [authState.currentUser, navigate]);
 
   // Don't render homepage for admins
-  if (authState.currentUser?.role === 'admin' || authState.currentUser?.role === 'super_admin') {
+  if (authState.currentUser?.role === 'admin') {
     return null;
   }
 
@@ -66,7 +66,7 @@ const HomePage: React.FC = () => {
               <div className="text-sm text-gray-600">
                 Bonjour, <span className="font-medium">{authState.currentUser?.username}</span>
               </div>
-              {(authState.currentUser?.role === 'admin' || authState.currentUser?.role === 'super_admin') && (
+              {authState.currentUser?.role === 'admin' && (
                 <button
                   onClick={() => navigate('/admin')}
                   className="px-4 py-2 text-sm text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
@@ -210,7 +210,7 @@ const HomePage: React.FC = () => {
           <div className="space-y-4 max-w-4xl mx-auto">
             {state.examSets.map((examSet, index) => {
               const questionCounts = getExamQuestionCount(examSet.id);
-              const isLocked = !examSet.isActive && !state.completedExams.includes(examSet.id - 1);
+              const isLocked = !examSet.isActive;
               const isSelected = selectedExam === examSet.id;
               
               return (
@@ -275,8 +275,7 @@ const HomePage: React.FC = () => {
                       
                       {isLocked && (
                         <p className="text-sm text-orange-600 font-medium">
-                          {examSet.id === 1 ? 'Examen principal - Toujours disponible' : 
-                           `Terminez l'examen ${examSet.id - 1} pour débloquer celui-ci`}
+                          Terminez l'examen précédent pour débloquer celui-ci
                         </p>
                       )}
                     </div>

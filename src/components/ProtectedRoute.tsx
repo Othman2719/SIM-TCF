@@ -15,9 +15,7 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, requireAdmin 
   }
 
   if (requireAdmin && state.currentUser?.role !== 'admin') {
-    if (state.currentUser?.role !== 'super_admin') {
-      return <Navigate to="/" replace />;
-    }
+    return <Navigate to="/" replace />;
   }
 
   return <>{children}</>;
