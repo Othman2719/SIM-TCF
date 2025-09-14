@@ -5,18 +5,24 @@ const ProgressBar: React.FC = () => {
   const { state } = useTest();
 
   const getSectionProgress = () => {
-    const sectionQuestions = state.questions.filter(q => q.section === state.currentSection);
+    const sectionQuestions = state.questions.filter(q => 
+      q.section === state.currentSection && q.examSet === state.currentExamSet
+    );
     if (sectionQuestions.length === 0) return 0;
     
     return ((state.currentQuestionIndex + 1) / sectionQuestions.length) * 100;
   };
 
   const getOverallProgress = () => {
-    const totalQuestions = state.questions.length;
+    const totalQuestions = state.questions.filter(q => q.examSet === state.currentExamSet).length;
     if (totalQuestions === 0) return 0;
 
-    const listeningQuestions = state.questions.filter(q => q.section === 'listening').length;
-    const grammarQuestions = state.questions.filter(q => q.section === 'grammar').length;
+    const listeningQuestions = state.questions.filter(q => 
+      q.section === 'listening' && q.examSet === state.currentExamSet
+    ).length;
+    const grammarQuestions = state.questions.filter(q => 
+      q.section === 'grammar' && q.examSet === state.currentExamSet
+    ).length;
     
     let completedQuestions = 0;
 
@@ -36,13 +42,17 @@ const ProgressBar: React.FC = () => {
   };
 
   const getAnsweredInSection = () => {
-    const sectionQuestions = state.questions.filter(q => q.section === state.currentSection);
+    const sectionQuestions = state.questions.filter(q => 
+      q.section === state.currentSection && q.examSet === state.currentExamSet
+    );
     return sectionQuestions.filter(q => state.answers[q.id] !== undefined).length;
   };
 
   const sectionProgress = getSectionProgress();
   const overallProgress = getOverallProgress();
-  const sectionQuestions = state.questions.filter(q => q.section === state.currentSection);
+  const sectionQuestions = state.questions.filter(q => 
+    q.section === state.currentSection && q.examSet === state.currentExamSet
+  );
   const answeredCount = getAnsweredInSection();
 
   return (
