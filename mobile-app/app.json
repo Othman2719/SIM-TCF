@@ -9,21 +9,21 @@
     "splash": {
       "image": "./assets/splash.png",
       "resizeMode": "contain",
-      "backgroundColor": "#3b82f6"
+      "backgroundColor": "#3B82F6"
     },
     "assetBundlePatterns": [
       "**/*"
     ],
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.brixel.tcfsimulator"
+      "bundleIdentifier": "com.tcfsimulator.app"
     },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#3b82f6"
+        "backgroundColor": "#3B82F6"
       },
-      "package": "com.brixel.tcfsimulator"
+      "package": "com.tcfsimulator.app"
     },
     "web": {
       "favicon": "./assets/favicon.png"
