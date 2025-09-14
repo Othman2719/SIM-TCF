@@ -13,27 +13,16 @@ export default function App() {
     <AuthProvider>
       <NavigationContainer>
         <StatusBar style="auto" />
-        <Stack.Navigator
-          initialRouteName="Login"
-          screenOptions={{
-            headerStyle: {
-              backgroundColor: '#3B82F6',
-            },
-            headerTintColor: '#fff',
-            headerTitleStyle: {
-              fontWeight: 'bold',
-            },
-          }}
-        >
+        <Stack.Navigator initialRouteName="Login">
           <Stack.Screen 
             name="Login" 
             component={LoginScreen}
-            options={{ title: 'TCF Simulator' }}
+            options={{ headerShown: false }}
           />
           <Stack.Screen 
             name="Home" 
             component={HomeScreen}
-            options={{ title: 'Accueil' }}
+            options={{ headerShown: false }}
           />
         </Stack.Navigator>
       </NavigationContainer>
